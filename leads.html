@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head><meta charset="UTF-8"><script src="https://cdn.tailwindcss.com"></script><title>ניהול לידים</title></head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-4xl mx-auto">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-black">ניהול לידים ומידע 🎯</h1>
+            <button onclick="addLead()" class="bg-blue-600 text-white px-6 py-2 rounded-xl">+ ליד חדש</button>
+        </div>
+        <div id="leadsList" class="space-y-4"></div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+    <script type="module">
+        import { collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        
+        async function loadLeads() {
+            const querySnapshot = await getDocs(collection(window.db, "leads"));
+            document.getElementById('leadsList').innerHTML = querySnapshot.docs.map(doc => {
+                const data = doc.data();
+                return `
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="font-bold text-xl">${data.name}</h3>
+                            <p class="text-gray-500">${data.email || 'אין אימייל'}</p>
+                        </div>
+                        <button onclick="addNote('${doc.id}', '${data.notes || ''}')" class="text-blue-500 text-sm font-bold">📝 הוסף מידע/הערה</button>
+                    </div>
+                    <div class="mt-4 p-3 bg-gray-50 rounded-lg text-sm italic text-gray-600">
+                        <b>מידע CRM:</b> ${data.notes || 'אין מידע רשום...'}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        window.addNote = async (id, currentNote) => {
+            const newNote = prompt("רשום מידע חדש על הליד:", currentNote);
+            if (newNote !== null) {
+                await window.DreamCRM.updateInfo("leads", id, newNote);
+                loadLeads();
+            }
+        };
+
+        window.addLead = async () => {
+            const name = prompt("שם הליד:");
+            if(name) {
+                await addDoc(collection(window.db, "leads"), { name, notes: "", timestamp: new Date() });
+                loadLeads();
+            }
+        };
+        window.onload = loadLeads;
+    </script>
+</body>
+</html>
