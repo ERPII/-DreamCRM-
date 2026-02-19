@@ -1,91 +1,57 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <title>DreamCRM - דאשבורד ניהולי</title>
+    <meta charset="UTF-8"><script src="https://cdn.tailwindcss.com"></script>
+    <title>DreamCRM - דאשבורד</title>
 </head>
-<body class="bg-gray-100 flex h-screen overflow-hidden">
-
-    <aside class="w-64 bg-slate-900 text-white flex flex-col p-6 shadow-2xl">
-        <div class="text-2xl font-black mb-10 text-blue-400 border-b border-slate-700 pb-4 italic">DreamCRM 🚀</div>
+<body class="bg-slate-50 flex h-screen font-[Assistant]">
+    <aside class="w-64 bg-slate-900 text-white flex flex-col p-6 shadow-xl shrink-0">
+        <div class="text-2xl font-black mb-10 text-blue-400 border-b border-slate-700 pb-4 italic">DreamCRM</div>
         <nav class="flex-1 space-y-2">
-            <a href="dashboard.html" class="block p-3 rounded-lg bg-blue-600 font-bold">📊 דאשבורד</a>
-            <a href="leads.html" class="block p-3 rounded-lg hover:bg-slate-800 transition">🎯 ניהול לידים</a>
-            <a href="customers.html" class="block p-3 rounded-lg hover:bg-slate-800 transition">👥 לקוחות</a>
-            <a href="products.html" class="block p-3 rounded-lg hover:bg-slate-800 transition">🏷️ מחירון מוצרים</a>
-            <a href="service.html" class="block p-3 rounded-lg hover:bg-slate-800 transition">🛠️ קריאות שירות</a>
-            <a href="reports.html" class="block p-3 rounded-lg hover:bg-slate-800 transition text-green-400">📈 דוחות (35 סוגים)</a>
-            <a id="adminLink" href="users.html" class="hidden block p-3 rounded-lg border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500 hover:text-white transition mt-10">🔐 ניהול עובדים</a>
+            <a href="dashboard.html" class="block p-3 rounded-xl bg-blue-600 font-bold">📊 דאשבורד</a>
+            <a href="leads.html" class="block p-3 rounded-xl hover:bg-slate-800 transition">🎯 לידים</a>
+            <a href="customers.html" class="block p-3 rounded-xl hover:bg-slate-800 transition">👥 לקוחות</a>
+            <a href="service.html" class="block p-3 rounded-xl hover:bg-slate-800 transition">🛠️ שירות</a>
+            <a id="adminLink" href="users.html" class="hidden block p-3 rounded-xl text-yellow-500 border border-yellow-500/20">🔐 ניהול עובדים</a>
         </nav>
-        <button onclick="window.DreamCRM.logout().then(() => location.href='index.html')" class="p-3 bg-red-600/20 text-red-400 border border-red-600/50 rounded-xl hover:bg-red-600 hover:text-white transition">התנתק</button>
+        <button onclick="window.DreamCRM.logout()" class="p-3 text-red-400 text-right mt-auto">התנתק</button>
     </aside>
 
-    <main class="flex-1 p-10 overflow-y-auto">
-        <header class="flex justify-between items-center mb-10">
-            <div>
-                <h1 class="text-4xl font-black text-slate-800">שלום, <span id="userNameDisplay" class="text-blue-600">...</span> 👋</h1>
-                <p class="text-gray-500 font-medium">הנה מה שקורה בעסק שלך היום</p>
+    <div class="flex-1 flex flex-col min-w-0">
+        <header class="h-20 bg-white border-b flex items-center justify-between px-10">
+            <div class="font-bold text-slate-800" id="pageTitle">לוח בקרה</div>
+            <div class="flex items-center gap-3 bg-slate-50 p-2 rounded-2xl border">
+                <div class="text-right">
+                    <div id="navUserName" class="text-sm font-black">טוען...</div>
+                    <div id="navUserRole" class="text-[10px] text-blue-600"></div>
+                </div>
+                <div id="navAvatar" class="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center font-bold">?</div>
             </div>
-            <div id="statusBadge" class="px-4 py-2 bg-green-100 text-green-700 rounded-full text-sm font-bold shadow-sm">מחובר לענן</div>
         </header>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
-            <div class="bg-white p-8 rounded-3xl shadow-sm border-b-4 border-blue-500 transform hover:scale-105 transition">
-                <h3 class="text-gray-400 font-bold uppercase text-xs tracking-wider">לידים חדשים</h3>
-                <p class="text-5xl font-black text-slate-800 mt-2" id="countLeads">0</p>
-            </div>
-            <div class="bg-white p-8 rounded-3xl shadow-sm border-b-4 border-green-500 transform hover:scale-105 transition">
-                <h3 class="text-gray-400 font-bold uppercase text-xs tracking-wider">לקוחות פעילים</h3>
-                <p class="text-5xl font-black text-slate-800 mt-2" id="countCustomers">0</p>
-            </div>
-            <div class="bg-white p-8 rounded-3xl shadow-sm border-b-4 border-red-500 transform hover:scale-105 transition">
-                <h3 class="text-gray-400 font-bold uppercase text-xs tracking-wider">קריאות פתוחות</h3>
-                <p class="text-5xl font-black text-slate-800 mt-2" id="countTickets">0</p>
-            </div>
-        </div>
-
-        <div class="bg-white p-8 rounded-3xl shadow-sm">
-            <h2 class="text-xl font-bold mb-6 border-b pb-4">פעולות מהירות</h2>
-            <div class="flex gap-4">
-                <button onclick="location.href='leads.html'" class="bg-blue-50 text-blue-600 px-6 py-3 rounded-2xl font-bold hover:bg-blue-600 hover:text-white transition">🎯 הוסף ליד חדש</button>
-                <button onclick="location.href='service.html'" class="bg-red-50 text-red-600 px-6 py-3 rounded-2xl font-bold hover:bg-red-600 hover:text-white transition">🛠️ פתח קריאת שירות</button>
-                <button onclick="location.href='reports.html'" class="bg-green-50 text-green-600 px-6 py-3 rounded-2xl font-bold hover:bg-green-600 hover:text-white transition">📊 הפק דוח חודשי</button>
-            </div>
-        </div>
-    </main>
+        <main class="p-10 overflow-y-auto">
+            <div class="grid grid-cols-3 gap-6">
+                <div class="bg-white p-8 rounded-3xl shadow-sm border-b-4 border-blue-500">
+                    <h3 class="text-gray-400 text-xs font-bold">לידים</h3>
+                    <p id="countLeads" class="text-4xl font-black">0</p>
+                </div>
+                </div>
+        </main>
+    </div>
 
     <script type="module" src="app.js"></script>
     <script type="module">
         import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-        // פונקציית טעינת נתונים
-        async function initDashboard() {
-            window.DreamCRM.checkUserStatus(async (user) => {
-                if (!user) {
-                    window.location.href = 'index.html';
-                    return;
-                }
-
-                // הצגת שם המשתמש והרשאות
-                document.getElementById('userNameDisplay').innerText = user.name;
-                if (user.role === 'admin') {
-                    document.getElementById('adminLink').classList.remove('hidden');
-                }
-
-                // משיכת מספרים מהענן (Firebase)
-                const leadsSnap = await getDocs(collection(window.db, "leads"));
-                const custSnap = await getDocs(collection(window.db, "customers"));
-                const tickSnap = await getDocs(collection(window.db, "tickets"));
-
-                document.getElementById('countLeads').innerText = leadsSnap.size;
-                document.getElementById('countCustomers').innerText = custSnap.size;
-                document.getElementById('countTickets').innerText = tickSnap.size;
-            });
-        }
-
-        window.onload = initDashboard;
+        window.DreamCRM.checkUserStatus(async (user) => {
+            if(!user) return location.href='index.html';
+            document.getElementById('navUserName').innerText = user.name;
+            document.getElementById('navUserRole').innerText = user.role;
+            document.getElementById('navAvatar').innerText = user.name.charAt(0);
+            if(user.role === 'admin') document.getElementById('adminLink').classList.remove('hidden');
+            
+            const l = await getDocs(collection(window.db, "leads"));
+            document.getElementById('countLeads').innerText = l.size;
+        });
     </script>
 </body>
 </html>
