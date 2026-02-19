@@ -1,34 +1,53 @@
-<!DOCTYPE html>
-<html lang="he" dir="rtl">
-<head>
-    <meta charset="UTF-8"><script src="https://cdn.tailwindcss.com"></script><title>DreamCRM - כניסה</title>
-</head>
-<body class="bg-slate-900 h-screen flex items-center justify-center p-4">
-    <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md">
-        <h1 class="text-3xl font-black text-center text-blue-600 mb-6">DreamCRM</h1>
-        <div class="space-y-4">
-            <input id="email" type="email" placeholder="אימייל" class="w-full p-4 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
-            <input id="pass" type="password" placeholder="סיסמה" class="w-full p-4 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
-            <button onclick="handleLogin()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg">התחברות</button>
-            <div class="text-center">
-                <button onclick="forgotPass()" class="text-sm text-gray-500 hover:text-blue-600 underline">שכחתי סיסמה - שלח לי מייל שחזור</button>
-            </div>
+<div class="max-w-5xl mx-auto">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-black">ניהול לידים 🎯</h1>
+        <div class="flex gap-2">
+            <input type="file" id="excelIn" class="hidden" accept=".xlsx">
+            <label for="excelIn" class="bg-green-600 text-white px-4 py-2 rounded-xl cursor-pointer">ייבוא אקסל</label>
         </div>
     </div>
-    <script type="module" src="app.js"></script>
-    <script type="module">
-        window.handleLogin = async () => {
-            const res = await window.DreamCRM.login(document.getElementById('email').value, document.getElementById('pass').value);
-            if(res.success) window.location.href = 'dashboard.html';
-            else alert("שגיאה: " + res.error);
-        };
-        window.forgotPass = async () => {
-            const email = document.getElementById('email').value;
-            if(!email) return alert("אנא הזן אימייל קודם");
-            const res = await window.DreamCRM.resetPassword(email);
-            if(res.success) alert("מייל לשחזור סיסמה נשלח אליך ברגע זה!");
-            else alert("שגיאה: " + res.error);
-        };
-    </script>
-</body>
-</html>
+
+    <div class="mb-6 relative">
+        <input type="text" id="searchInput" placeholder="חפש לפי שם, טלפון, מייל או שם עסק..." 
+               class="w-full p-4 pr-12 rounded-2xl border-none shadow-sm focus:ring-2 focus:ring-blue-500 outline-none">
+        <span class="absolute right-4 top-4 opacity-30 text-xl">🔍</span>
+    </div>
+
+    <div id="list" class="grid gap-4"></div>
+</div>
+
+<script type="module">
+    import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    let allLeads = [];
+
+    async function load() {
+        const snap = await getDocs(collection(window.db, "leads"));
+        allLeads = snap.docs.map(d => ({id: d.id, ...d.data()}));
+        render(allLeads);
+    }
+
+    function render(data) {
+        document.getElementById('list').innerHTML = data.map(l => `
+            <div class="bg-white p-6 rounded-2xl shadow-sm flex justify-between items-center">
+                <div>
+                    <h3 class="font-bold text-lg">${l.name}</h3>
+                    <p class="text-sm text-gray-500">${l.businessName || 'עסק לא צוין'} | ${l.phone || ''}</p>
+                </div>
+                <button class="text-blue-600 font-bold">צפה בתיק</button>
+            </div>
+        `).join('');
+    }
+
+    // הפעלת החיפוש בזמן אמת
+    document.getElementById('searchInput').oninput = (e) => {
+        const filtered = window.DreamCRM.filterData(allLeads, e.target.value);
+        render(filtered);
+    };
+
+    document.getElementById('excelIn').onchange = async (e) => {
+        await window.DreamCRM.importLeadsFromExcel(e.target.files[0]);
+        load();
+    };
+
+    window.onload = load;
+</script>
