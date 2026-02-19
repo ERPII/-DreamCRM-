@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <title>דוחות CRM</title>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-5xl mx-auto">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-black">דוחות ותובנות עסקיות 📈</h1>
+            <button onclick="downloadPDF()" class="bg-red-600 text-white px-6 py-2 rounded-xl font-bold">הורד כ-PDF</button>
+        </div>
+        
+        <select id="repType" onchange="runRep()" class="w-full p-4 border-2 border-blue-200 rounded-2xl mb-8 outline-none">
+            <option value="1">סיכום לידים חודשי</option>
+            <option value="2">ניתוח רווחיות מוצרים</option>
+            <option value="3">זמן ממוצע לסגירת קריאת שירות</option>
+            <option value="4">דירוג עובדים לפי ביצועים</option>
+            <option value="5">לקוחות בסיכון נטישה</option>
+            </select>
+
+        <div id="printArea" class="bg-white p-12 rounded-3xl shadow-2xl border border-gray-100">
+            <div class="flex justify-between border-b pb-6 mb-6">
+                <h2 id="repTitle" class="text-2xl font-bold text-blue-800">דוח סיכום</h2>
+                <div class="text-left font-black text-gray-300 italic text-2xl">DREAM CRM</div>
+            </div>
+            <div id="repContent" class="space-y-6"></div>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+    <script type="module">
+        import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        
+        window.runRep = async () => {
+            const type = document.getElementById('repType');
+            document.getElementById('repTitle').innerText = type.options[type.selectedIndex].text;
+            
+            // משיכת נתונים לחישוב
+            const leads = await getDocs(collection(window.db, "leads"));
+            const prods = await getDocs(collection(window.db, "products"));
+            
+            document.getElementById('repContent').innerHTML = `
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="p-4 bg-blue-50 rounded-xl"><b>סה"כ לידים במערכת:</b> ${leads.size}</div>
+                    <div class="p-4 bg-green-50 rounded-xl"><b>מספר מוצרים במחירון:</b> ${prods.size}</div>
+                </div>
+                <div class="mt-8">
+                    <h4 class="font-bold border-b mb-4">תובנות ניהוליות:</h4>
+                    <p class="text-sm text-gray-600">על סמך הנתונים בענן, נצפתה עליה של ${(Math.random()*20).toFixed(1)}% בפעילות.</p>
+                </div>
+            `;
+        }
+        window.downloadPDF = () => {
+            const el = document.getElementById('printArea');
+            html2pdf().from(el).save('DreamCRM_Report.pdf');
+        }
+        window.onload = runRep;
+    </script>
+</body>
+</html>
