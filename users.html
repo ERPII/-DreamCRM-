@@ -1,39 +1,54 @@
-<!DOCTYPE html>
-<html lang="he" dir="rtl">
-<head><meta charset="UTF-8"><script src="https://cdn.tailwindcss.com"></script><title>ניהול עובדים</title></head>
-<body class="bg-gray-50 p-8">
-    <div class="max-w-4xl mx-auto">
-        <h1 class="text-3xl font-black mb-8 text-indigo-800">תיקי עובדים וניהול 🔐</h1>
-        <div id="usersList" class="space-y-4"></div>
-    </div>
+<div class="max-w-4xl mx-auto">
+    <h1 class="text-3xl font-black mb-10 border-r-4 border-yellow-500 pr-4">ניהול צוות ומשאבי אנוש 🔐</h1>
+    <div id="staffList" class="grid gap-6"></div>
+</div>
 
-    <script type="module" src="app.js"></script>
-    <script type="module">
-        import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        
-        async function loadUsers() {
-            const querySnapshot = await getDocs(collection(window.db, "users"));
-            document.getElementById('usersList').innerHTML = querySnapshot.docs.map(doc => {
-                const data = doc.data();
-                return `
-                <div class="bg-white p-6 rounded-2xl shadow-md border-r-4 border-indigo-500">
-                    <div class="flex justify-between">
-                        <h3 class="font-bold text-lg">${data.name} <span class="text-sm font-normal text-gray-400">(${data.role})</span></h3>
-                        <button onclick="editEmp('${doc.id}', '${data.notes || ''}')" class="text-indigo-600 underline text-sm">ערוך תיק עובד</button>
+<script type="module">
+    import { collection, getDocs, updateDoc, doc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    async function loadStaff() {
+        const snap = await getDocs(collection(window.db, "users"));
+        document.getElementById('staffList').innerHTML = snap.docs.map(d => {
+            const u = d.data();
+            const history = u.history || [];
+            return `
+            <div class="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col md:flex-row gap-8">
+                <div class="w-20 h-20 bg-slate-800 rounded-2xl flex items-center justify-center text-3xl text-white font-black shrink-0">
+                    ${u.name.charAt(0)}
+                </div>
+                <div class="flex-1">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-2xl font-bold text-slate-800">${u.name}</h3>
+                            <p class="text-blue-500 font-medium">${u.role === 'admin' ? 'מנהל ראשי' : 'צוות מכירות/שירות'}</p>
+                        </div>
                     </div>
-                    <p class="mt-2 text-gray-600 text-sm italic">סיכום מנהל: ${data.notes || 'חלק...'}</p>
-                </div>`;
-            }).join('');
-        }
+                    
+                    <div class="bg-amber-50 rounded-2xl p-4 mb-4 border border-amber-100">
+                        <h4 class="text-xs font-bold text-amber-700 mb-3 italic">עדכוני מנהל ותיק אישי:</h4>
+                        <div class="space-y-2">
+                            ${history.map(h => `<div class="text-xs text-slate-700 bg-white/50 p-2 rounded-lg border-r-2 border-amber-400">📌 ${h}</div>`).join('') || 'תיק נקי - אין עדכונים'}
+                        </div>
+                    </div>
 
-        window.editEmp = async (id, oldNote) => {
-            const note = prompt("רשום מידע פנימי על העובד:", oldNote);
-            if(note !== null) {
-                await window.DreamCRM.updateInfo("users", id, note);
-                loadUsers();
-            }
-        };
-        window.onload = loadUsers;
-    </script>
-</body>
-</html>
+                    <div class="flex gap-2">
+                        <input id="hist-${d.id}" placeholder="הוסף הערת מנהל..." class="flex-1 bg-white border border-slate-200 rounded-xl p-2 text-sm">
+                        <button onclick="addHistory('${d.id}')" class="bg-amber-500 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md">שמור בתיק</button>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    window.addHistory = async (id) => {
+        const input = document.getElementById(`hist-${id}`);
+        if (!input.value) return;
+        await updateDoc(doc(window.db, "users", id), {
+            history: arrayUnion(input.value)
+        });
+        input.value = "";
+        loadStaff();
+    };
+
+    window.onload = loadStaff;
+</script>
