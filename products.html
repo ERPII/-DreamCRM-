@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head><meta charset="UTF-8"><script src="https://cdn.tailwindcss.com"></script><title>מחירון</title></head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-5xl mx-auto">
+        <div class="flex justify-between mb-8">
+            <h1 class="text-3xl font-black">מחירון מוצרים ושירותים 🏷️</h1>
+            <button onclick="addProd()" class="bg-indigo-600 text-white px-6 py-2 rounded-xl">הוסף מוצר</button>
+        </div>
+        <div id="productsGrid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+    </div>
+    <script type="module" src="app.js"></script>
+    <script type="module">
+        import { collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        async function load() {
+            const snap = await getDocs(collection(window.db, "products"));
+            document.getElementById('productsGrid').innerHTML = snap.docs.map(doc => {
+                const p = doc.data();
+                return `
+                <div class="bg-white p-6 rounded-2xl shadow-md border-t-4 border-indigo-600">
+                    <h3 class="font-bold text-lg">${p.name}</h3>
+                    <div class="text-2xl font-black text-indigo-700">₪${p.price}</div>
+                    <div class="text-xs text-gray-400">כולל מע"מ: ₪${(p.price * 1.18).toFixed(2)}</div>
+                    <p class="text-sm mt-4 text-gray-500">${p.notes || ''}</p>
+                    <button onclick="editNote('${doc.id}', '${p.notes || ''}')" class="mt-4 text-xs text-blue-500 underline">ערוך תיאור</button>
+                </div>`;
+            }).join('');
+        }
+        window.addProd = async () => {
+            const name = prompt("שם המוצר:");
+            const price = prompt("מחיר:");
+            if(name && price) {
+                await addDoc(collection(window.db, "products"), { name, price: parseFloat(price), notes: "", timestamp: new Date() });
+                load();
+            }
+        };
+        window.editNote = async (id, old) => {
+            const n = prompt("תיאור מוצר:", old);
+            if(n !== null) { await window.DreamCRM.updateInfo("products", id, n); load(); }
+        };
+        window.onload = load;
+    </script>
+</body>
+</html>
