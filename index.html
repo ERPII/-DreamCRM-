@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8"><script src="https://cdn.tailwindcss.com"></script><title>DreamCRM - כניסה</title>
+</head>
+<body class="bg-slate-900 h-screen flex items-center justify-center p-4">
+    <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md">
+        <h1 class="text-3xl font-black text-center text-blue-600 mb-6">DreamCRM</h1>
+        <div class="space-y-4">
+            <input id="email" type="email" placeholder="אימייל" class="w-full p-4 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+            <input id="pass" type="password" placeholder="סיסמה" class="w-full p-4 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+            <button onclick="handleLogin()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg">התחברות</button>
+            <div class="text-center">
+                <button onclick="forgotPass()" class="text-sm text-gray-500 hover:text-blue-600 underline">שכחתי סיסמה - שלח לי מייל שחזור</button>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="app.js"></script>
+    <script type="module">
+        window.handleLogin = async () => {
+            const res = await window.DreamCRM.login(document.getElementById('email').value, document.getElementById('pass').value);
+            if(res.success) window.location.href = 'dashboard.html';
+            else alert("שגיאה: " + res.error);
+        };
+        window.forgotPass = async () => {
+            const email = document.getElementById('email').value;
+            if(!email) return alert("אנא הזן אימייל קודם");
+            const res = await window.DreamCRM.resetPassword(email);
+            if(res.success) alert("מייל לשחזור סיסמה נשלח אליך ברגע זה!");
+            else alert("שגיאה: " + res.error);
+        };
+    </script>
+</body>
+</html>
