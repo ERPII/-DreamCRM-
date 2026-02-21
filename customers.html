@@ -2,160 +2,153 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
     <title>ניהול לקוחות - DreamCRM</title>
     <style>
-        body { font-family: 'Assistant', sans-serif; background-color: #f8fafc; }
-        .customer-card:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1); }
+        body { font-family: 'Assistant', sans-serif; background: #f8fafc; }
+        .form-input { @apply w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all text-lg; }
+        .field-label { @apply block text-xs font-black text-slate-400 mb-2 mr-2 uppercase; }
+        .search-suggestion { @apply p-4 hover:bg-blue-50 cursor-pointer border-b border-slate-50 flex justify-between items-center transition-colors; }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden">
 
-    <aside class="w-64 bg-slate-900 text-white p-6 flex flex-col shrink-0 shadow-2xl">
-        <div class="text-2xl font-black mb-10 text-blue-400 italic">DreamCRM</div>
+    <aside class="w-64 bg-slate-950 text-white p-6 flex flex-col shrink-0">
+        <div class="text-2xl font-black mb-10 text-blue-500 italic">DreamCRM</div>
         <nav class="flex-1 space-y-2">
-            <a href="dashboard.html" class="block p-3 rounded-xl hover:bg-slate-800 transition">📊 דאשבורד</a>
-            <a href="leads.html" class="block p-3 rounded-xl hover:bg-slate-800 transition">🎯 לידים</a>
-            <a href="customers.html" class="block p-3 rounded-xl bg-blue-600 font-bold shadow-lg">👥 לקוחות</a>
-            <a id="adminLink" href="users.html" class="hidden block p-3 rounded-xl text-yellow-500 border border-yellow-500/10">🔐 ניהול עובדים</a>
+            <a href="dashboard.html" class="block p-3 rounded-xl hover:bg-slate-900">📊 דאשבורד</a>
+            <a href="customers.html" class="block p-3 rounded-xl bg-blue-600 font-bold">👥 לקוחות</a>
         </nav>
         <button onclick="window.DreamCRM.logout()" class="text-red-400 text-sm font-bold mt-auto text-right">התנתק</button>
     </aside>
 
     <div class="flex-1 flex flex-col min-w-0">
-        <header class="h-20 bg-white border-b flex items-center justify-between px-10 shrink-0">
-            <h1 class="text-xl font-black text-slate-800">ניהול לקוחות VIP</h1>
-            <div class="flex items-center gap-4">
-                <div class="text-right">
-                    <div id="navUserName" class="text-sm font-bold">טוען...</div>
-                    <div id="navUserRole" class="text-[10px] text-blue-600 font-bold"></div>
+        <header class="h-20 bg-white border-b flex items-center justify-between px-10">
+            <h1 class="text-xl font-black text-slate-800">כרטיס לקוח</h1>
+            <div id="userInfoHeader" class="flex items-center gap-3">
                 </div>
-                <div id="navAvatar" class="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center font-bold"></div>
-            </div>
         </header>
 
-        <main class="flex-1 overflow-y-auto p-8">
-            <div class="max-w-6xl mx-auto space-y-8">
+        <main class="flex-1 overflow-y-auto p-10">
+            <div class="max-w-5xl mx-auto bg-white rounded-[2.5rem] shadow-xl border border-slate-100 relative">
                 
-                <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
-                    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 items-end">
-                        <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-400 mb-2 mr-2">שם הלקוח / עסק</label>
-                                <input id="newCustName" type="text" placeholder="שם מלא" class="w-full p-3 bg-slate-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-400 mb-2 mr-2">טלפון</label>
-                                <input id="newCustPhone" type="text" placeholder="050-0000000" class="w-full p-3 bg-slate-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-400 mb-2 mr-2">אימייל</label>
-                                <input id="newCustEmail" type="email" placeholder="example@mail.com" class="w-full p-3 bg-slate-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500">
-                            </div>
+                <div id="liveSearchResults" class="absolute top-24 left-10 right-10 bg-white shadow-2xl rounded-2xl border border-blue-100 z-50 hidden overflow-hidden"></div>
+
+                <form id="customerForm" class="p-12 space-y-10">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div class="relative">
+                            <label class="field-label">שם הלקוח / עסק</label>
+                            <input type="text" id="f_name" placeholder="הקלד שם..." class="form-input" oninput="liveSearch(this.value, 'name')">
                         </div>
-                        <button onclick="addCustomer()" class="bg-slate-900 text-white p-4 rounded-2xl font-bold hover:bg-blue-600 transition-all shadow-lg">הוסף לקוח למאגר</button>
+                        <div class="relative">
+                            <label class="field-label">טלפון (חובה)</label>
+                            <input type="tel" id="f_phone" placeholder="הקלד טלפון..." class="form-input" oninput="liveSearch(this.value, 'phone')">
+                        </div>
+                        <div class="relative">
+                            <label class="field-label">אימייל (חובה)</label>
+                            <input type="email" id="f_email" placeholder="הקלד מייל..." class="form-input" oninput="liveSearch(this.value, 'email')">
+                        </div>
                     </div>
 
-                    <div class="mt-8 pt-8 border-t border-slate-50 relative">
-                        <input type="text" id="custSearch" placeholder="🔍 חפש לקוח לפי שם, טלפון, עסק או אימייל..." 
-                               class="w-full p-5 pr-14 bg-blue-50/50 border-none rounded-[1.5rem] outline-none focus:ring-2 focus:ring-blue-500 text-lg font-medium">
-                    </div>
-                </div>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 pt-6 border-t border-slate-50">
+                        <div><label class="field-label">ח.פ / ת.ז</label><input id="f_id" class="form-input"></div>
+                        <div><label class="field-label">עיר</label><input id="f_city" class="form-input"></div>
+                        <div><label class="field-label">סטטוס לקוח</label><select id="f_status" class="form-input"><option>פעיל</option><option>לא פעיל</option><option>מוקפא</option></select></div>
+                        <div><label class="field-label">כתובת</label><input id="f_address" class="form-input"></div>
+                        </div>
 
-                <div id="customersList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="flex items-center gap-4 pt-10">
+                        <button type="submit" class="flex-1 bg-slate-900 text-white p-5 rounded-2xl font-black text-xl hover:bg-blue-600 transition-all shadow-lg">שמור ועדכן במערכת</button>
+                        <button type="button" onclick="resetForm()" class="bg-slate-100 text-slate-400 px-10 rounded-2xl font-bold">נקה</button>
                     </div>
+                </form>
             </div>
         </main>
     </div>
 
-    <div id="custModal" class="hidden fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden">
-            <div class="bg-blue-600 p-8 text-white flex justify-between items-center">
-                <div>
-                    <h2 id="modalName" class="text-3xl font-black"></h2>
-                    <p id="modalBusiness" class="opacity-80"></p>
-                </div>
-                <button onclick="closeModal()" class="text-2xl">✕</button>
-            </div>
-            <div class="p-8 space-y-6">
-                <div class="grid grid-cols-2 gap-6">
-                    <div class="bg-slate-50 p-4 rounded-2xl">
-                        <span class="block text-xs font-bold text-slate-400">טלפון</span>
-                        <span id="modalPhone" class="text-lg font-bold text-slate-800"></span>
-                    </div>
-                    <div class="bg-slate-50 p-4 rounded-2xl">
-                        <span class="block text-xs font-bold text-slate-400">אימייל</span>
-                        <span id="modalEmail" class="text-lg font-bold text-slate-800"></span>
-                    </div>
-                </div>
-                <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100">
-                    <h4 class="font-bold text-blue-800 mb-2 italic">היסטוריית עדכונים (13 עדכונים אחרונים):</h4>
-                    <div id="modalUpdates" class="space-y-2 max-h-40 overflow-y-auto text-sm text-slate-600"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script type="module" src="app.js"></script>
     <script type="module">
-        import { collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        let allCustomers = [];
+        import { collection, getDocs, addDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        
+        let customersData = [];
+        const resultsDiv = document.getElementById('liveSearchResults');
 
-        async function load() {
+        async function loadData() {
             const snap = await getDocs(collection(window.db, "customers"));
-            allCustomers = snap.docs.map(d => ({id: d.id, ...d.data()}));
-            render(allCustomers);
+            customersData = snap.docs.map(d => ({id: d.id, ...d.data()}));
         }
 
-        function render(data) {
-            const container = document.getElementById('customersList');
-            container.innerHTML = data.map(c => `
-                <div onclick="showDetails('${c.id}')" class="customer-card bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm transition-all cursor-pointer group">
-                    <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mb-4 font-black group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                        ${c.name.charAt(0)}
-                    </div>
-                    <h3 class="font-black text-xl text-slate-800">${c.name}</h3>
-                    <p class="text-slate-400 text-sm mb-4">${c.businessName || 'לקוח פרטי'}</p>
-                    <div class="flex flex-wrap gap-2">
-                        <span class="bg-slate-50 text-slate-500 text-[10px] px-2 py-1 rounded-lg font-bold">${c.phone || ''}</span>
-                        <span class="bg-slate-50 text-slate-500 text-[10px] px-2 py-1 rounded-lg font-bold">לקוח פעיל</span>
-                    </div>
-                </div>
-            `).join('');
-        }
+        // פונקציית החימוש בתוך השדות
+        window.liveSearch = (val, type) => {
+            if (val.length < 2) { resultsDiv.classList.add('hidden'); return; }
 
-        window.showDetails = (id) => {
-            const c = allCustomers.find(item => item.id === id);
-            document.getElementById('modalName').innerText = c.name;
-            document.getElementById('modalBusiness').innerText = c.businessName || 'לקוח פרטי';
-            document.getElementById('modalPhone').innerText = c.phone || '---';
-            document.getElementById('modalEmail').innerText = c.email || '---';
-            document.getElementById('modalUpdates').innerHTML = (c.updates || ['אין עדכונים']).map(u => `<div>• ${u}</div>`).join('');
-            document.getElementById('custModal').classList.remove('hidden');
-        };
-
-        window.closeModal = () => document.getElementById('custModal').classList.add('hidden');
-
-        document.getElementById('custSearch').oninput = (e) => {
-            render(window.DreamCRM.filter(allCustomers, e.target.value));
-        };
-
-        window.addCustomer = async () => {
-            const name = document.getElementById('newCustName').value;
-            const phone = document.getElementById('newCustPhone').value;
-            const email = document.getElementById('newCustEmail').value;
-            
-            if(!name) return alert("חובה להזין שם לקוח");
-            
-            await addDoc(collection(window.db, "customers"), {
-                name, phone, email, updates: ["לקוח נוסף למערכת"], timestamp: new Date()
+            const filtered = customersData.filter(c => {
+                if (type === 'name') return c.name?.includes(val);
+                if (type === 'phone') return c.phone?.includes(val);
+                if (type === 'email') return c.email?.toLowerCase().includes(val.toLowerCase());
+                return false;
             });
-            
-            location.reload();
+
+            if (filtered.length > 0) {
+                resultsDiv.innerHTML = filtered.map(c => `
+                    <div onclick="autoFill('${c.id}')" class="search-suggestion">
+                        <div>
+                            <span class="font-black text-slate-800">${c.name}</span>
+                            <span class="text-xs text-blue-600 mr-2">${c.businessName || ''}</span>
+                        </div>
+                        <div class="text-sm text-slate-400">${c.phone || ''} | ${c.email || ''}</div>
+                    </div>
+                `).join('');
+                resultsDiv.classList.remove('hidden');
+            } else {
+                resultsDiv.classList.add('hidden');
+            }
         };
 
-        window.onload = load;
+        window.autoFill = (id) => {
+            const c = customersData.find(i => i.id === id);
+            document.getElementById('f_name').value = c.name || '';
+            document.getElementById('f_phone').value = c.phone || '';
+            document.getElementById('f_email').value = c.email || '';
+            document.getElementById('f_id').value = c.businessId || '';
+            document.getElementById('f_city').value = c.city || '';
+            document.getElementById('f_address').value = c.address || '';
+            
+            resultsDiv.classList.add('hidden');
+            // הוספת סימון ויזואלי שהלקוח נטען
+            document.getElementById('f_name').classList.add('ring-2', 'ring-green-500');
+            setTimeout(() => document.getElementById('f_name').classList.remove('ring-2', 'ring-green-500'), 2000);
+        };
+
+        window.resetForm = () => {
+            document.getElementById('customerForm').reset();
+            resultsDiv.classList.add('hidden');
+        };
+
+        document.getElementById('customerForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const phone = document.getElementById('f_phone').value;
+            const email = document.getElementById('f_email').value;
+
+            if (!phone || !email) return alert("חובה להזין טלפון ואימייל!");
+
+            const data = {
+                name: document.getElementById('f_name').value,
+                phone: phone,
+                email: email,
+                businessId: document.getElementById('f_id').value,
+                city: document.getElementById('f_city').value,
+                address: document.getElementById('f_address').value,
+                timestamp: new Date()
+            };
+
+            await addDoc(collection(window.db, "customers"), data);
+            alert("הלקוח עודכן בהצלחה!");
+            resetForm();
+            loadData();
+        };
+
+        window.onload = loadData;
     </script>
 </body>
 </html>
