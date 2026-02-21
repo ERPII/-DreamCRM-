@@ -1,60 +1,145 @@
+// app.js - הליבה של DreamCRM
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, doc, getDoc, collection, addDoc, getDocs, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import * as XLSX from 'https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js';
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+// הגדרות ה-Firebase שלך (וודא שהן תואמות לפרויקט dreamcrm-2d69d)
 const firebaseConfig = {
-  apiKey: "AIzaSyDV-ncOuncy-7HZZJnCMe4uis9ZV2QczYw",
-  authDomain: "dreamcrm-2d69d.firebaseapp.com",
-  projectId: "dreamcrm-2d69d",
-  storageBucket: "dreamcrm-2d69d.firebasestorage.app",
-  appId: "1:124987219085:web:87edf1c9024a82950ad6c4"
+    apiKey: "YOUR_API_KEY", // החלף ב-API Key האמיתי שלך
+    authDomain: "dreamcrm-2d69d.firebaseapp.com",
+    projectId: "dreamcrm-2d69d",
+    storageBucket: "dreamcrm-2d69d.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID",
+    databaseURL: "https://dreamcrm-2d69d-default-rtdb.europe-west1.firebasedatabase.app"
 };
 
+// אתחול Firebase
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
 const auth = getAuth(app);
+const db = getFirestore(app);
 
-const DreamCRM = {
-    // מנגנון חיפוש חכם רב-שדתי
-    filter(data, term) {
-        if (!term) return data;
-        const s = term.toLowerCase();
-        return data.filter(i => 
-            (i.name?.toLowerCase().includes(s)) || 
-            (i.phone?.includes(s)) || 
-            (i.email?.toLowerCase().includes(s)) || 
-            (i.businessName?.toLowerCase().includes(s))
-        );
-    },
+// --- ניהול אבטחה והרשאות ---
 
-    // אתחול ממשק המשתמש וסנכרון ה-Header
-    initUI() {
-        onAuthStateChanged(auth, async (u) => {
-            // אם המשתמש לא מחובר והוא לא בדף הלוגין - שלח אותו ללוגין
-            if (!u && !window.location.pathname.endsWith('index.html') && window.location.pathname !== '/-DreamCRM-/') {
-                window.location.href = 'index.html';
-                return;
-            }
-            if (u) {
-                const d = await getDoc(doc(db, "users", u.uid));
-                const data = d.exists() ? d.data() : { name: u.displayName || "משתמש", role: "עובד" };
-                
-                if (document.getElementById('navUserName')) document.getElementById('navUserName').innerText = data.name;
-                if (document.getElementById('navUserRole')) document.getElementById('navUserRole').innerText = data.role === 'admin' ? 'מנהל מערכת' : 'צוות';
-                if (document.getElementById('navAvatar')) document.getElementById('navAvatar').innerText = data.name.charAt(0);
-                if (data.role === 'admin' && document.getElementById('adminLink')) document.getElementById('adminLink').classList.remove('hidden');
+/**
+ * בודק האם המשתמש המחובר הוא אדמין
+ * מבוסס על שדה 'role' באוסף 'users' ב-Firestore
+ */
+export async function checkAdminStatus() {
+    return new Promise((resolve) => {
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                try {
+                    const userDoc = await getDoc(doc(db, "users", user.uid));
+                    if (userDoc.exists() && userDoc.data().role === 'admin') {
+                        resolve(true);
+                    } else {
+                        resolve(false);
+                    }
+                } catch (error) {
+                    console.error("שגיאה בבדיקת הרשאות:", error);
+                    resolve(false);
+                }
+            } else {
+                // אם המשתמש לא מחובר בכלל, הפנה אותו לדף ההתחברות
+                if (!window.location.pathname.includes('index.html')) {
+                    window.location.href = 'index.html';
+                }
+                resolve(false);
             }
         });
-    },
+    });
+}
 
-    async login(e, p) { 
-        try { await signInWithEmailAndPassword(auth, e, p); return {success:true}; } 
-        catch(err) { return {success:false, error: "פרטים שגויים"}; }
-    },
-    
-    async logout() { await signOut(auth); window.location.href = 'index.html'; }
+// --- פונקציות גלובליות לשימוש בכל הדפים ---
+
+/**
+ * התנתקות מהמערכת
+ */
+window.logout = () => {
+    signOut(auth).then(() => {
+        window.location.href = 'index.html';
+    }).catch((error) => {
+        console.error("שגיאה בהתנתקות:", error);
+    });
 };
 
-window.DreamCRM = DreamCRM; window.db = db; window.auth = auth;
-window.addEventListener('DOMContentLoaded', DreamCRM.initUI);
+/**
+ * הוספת לקוח חדש למערכת
+ * @param {Object} customerData - פרטי הלקוח
+ */
+window.addNewCustomer = async (customerData) => {
+    try {
+        const docRef = await addDoc(collection(db, "customers"), {
+            ...customerData,
+            createdAt: serverTimestamp(),
+            createdBy: auth.currentUser.uid
+        });
+        console.log("לקוח נוסף עם מזהה:", docRef.id);
+        return docRef.id;
+    } catch (error) {
+        console.error("שגיאה בשמירת לקוח:", error);
+        throw error;
+    }
+};
+
+/**
+ * פתיחת קריאת שירות חדשה
+ */
+window.createServiceTicket = async (ticketData) => {
+    try {
+        const ticketId = "SR-" + Math.floor(1000 + Math.random() * 9000); // יצירת ID ייחודי
+        await setDoc(doc(db, "tickets", ticketId), {
+            ...ticketData,
+            ticketId: ticketId,
+            timestamp: serverTimestamp(),
+            status: "open"
+        });
+        return ticketId;
+    } catch (error) {
+        console.error("שגיאה בפתיחת קריאה:", error);
+        throw error;
+    }
+};
+
+// --- ניהול ממשק משתמש (UI) ---
+
+// עדכון שעון ותאריך (לדאשבורד)
+function initLiveClock() {
+    const clockEl = document.getElementById('liveClock');
+    const dateEl = document.getElementById('liveDate');
+    
+    if (clockEl && dateEl) {
+        const update = () => {
+            const now = new Date();
+            clockEl.innerText = now.toLocaleTimeString('he-IL', { hour12: false });
+            dateEl.innerText = now.toLocaleDateString('he-IL', { 
+                day: 'numeric', month: 'long', year: 'numeric' 
+            }).toUpperCase();
+        };
+        setInterval(update, 1000);
+        update();
+    }
+}
+
+// הפעלה ראשונית
+document.addEventListener('DOMContentLoaded', () => {
+    initLiveClock();
+    
+    // בדיקה אם המשתמש מחובר ועדכון פרטי ה-Header
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            const nameEl = document.getElementById('navUserName');
+            const roleEl = document.getElementById('navUserRole');
+            
+            // נסיון למשוך פרטים מה-Firestore
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            if (userDoc.exists()) {
+                if (nameEl) nameEl.innerText = userDoc.data().name || "APII";
+                if (roleEl) roleEl.innerText = userDoc.data().role || "User";
+            }
+        }
+    });
+});
+
+export { auth, db };
