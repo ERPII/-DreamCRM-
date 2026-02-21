@@ -1,0 +1,50 @@
+/* style.css - העיצוב האחיד והיוקרתי */
+:root {
+    --primary: #2563eb;
+    --dark: #0f172a;
+    --glass: rgba(255, 255, 255, 0.8);
+}
+
+body {
+    font-family: 'Assistant', sans-serif;
+    background: #f1f5f9;
+    display: flex;
+    margin: 0;
+}
+
+/* Sidebar אחיד */
+.sidebar {
+    width: 280px;
+    background: var(--dark);
+    color: white;
+    height: 100vh;
+    padding: 2rem;
+    position: sticky;
+    top: 0;
+}
+
+/* כרטיסי פרימיום */
+.card-vip {
+    background: var(--glass);
+    backdrop-filter: blur(10px);
+    border-radius: 2rem;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    border: 1px solid rgba(255,255,255,0.3);
+    transition: transform 0.3s ease;
+}
+
+.card-vip:hover {
+    transform: translateY(-5px);
+}
+
+/* כפתורים */
+.btn-main {
+    background: var(--primary);
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 1rem;
+    font-weight: 800;
+    text-align: center;
+    cursor: pointer;
+}
