@@ -1,68 +1,118 @@
-<div class="max-w-5xl mx-auto">
-    <div class="flex justify-between items-center mb-8">
-        <h1 class="text-3xl font-black text-slate-800">ניהול לידים חכם 🎯</h1>
-        <button onclick="addNewLead()" class="bg-blue-600 text-white px-6 py-3 rounded-2xl font-bold shadow-lg">+ ליד חדש</button>
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700;800&display=swap" rel="stylesheet">
+    <title>ניהול לידים VIP - DreamCRM</title>
+    <style>
+        body { font-family: 'Assistant', sans-serif; background: #f8fafc; }
+        .glass-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border: 1px solid rgba(0,0,0,0.05); }
+        .btn-action { @apply flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all shadow-sm hover:shadow-md active:scale-95; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <aside class="w-72 bg-slate-950 text-white p-8 flex flex-col shrink-0 shadow-2xl">
+        <div class="flex items-center gap-3 mb-12">
+            <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-xl shadow-lg">💎</div>
+            <h1 class="text-2xl font-black italic tracking-tighter">DreamCRM</h1>
+        </div>
+        <nav class="flex-1 space-y-2">
+            <a href="dashboard.html" class="flex items-center gap-3 p-4 rounded-2xl opacity-60 hover:opacity-100">📊 דאשבורד</a>
+            <a href="customers.html" class="flex items-center gap-3 p-4 rounded-2xl opacity-60 hover:opacity-100">👥 לקוחות</a>
+            <a href="leads.html" class="flex items-center gap-3 p-4 rounded-2xl bg-blue-600 font-bold shadow-xl shadow-blue-500/20">🎯 ניהול לידים</a>
+            <a href="service.html" class="flex items-center gap-3 p-4 rounded-2xl opacity-60 hover:opacity-100">🛠️ מרכז שירות</a>
+        </nav>
+        <button onclick="logout()" class="p-4 text-red-400 font-bold hover:bg-red-400/10 rounded-2xl transition-all mt-auto">🚪 התנתקות</button>
+    </aside>
+
+    <div class="flex-1 flex flex-col min-w-0">
+        
+        <header class="h-28 bg-white border-b px-10 flex items-center justify-between shrink-0 z-10">
+            <div class="flex items-center gap-4 bg-slate-100 p-2 rounded-2xl border border-slate-200 w-1/2">
+                <input type="text" id="leadSearch" placeholder="חיפוש מהיר בלידים..." class="bg-transparent p-3 outline-none flex-1 font-bold">
+                <button class="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-600 transition-all">חפש</button>
+            </div>
+            
+            <div class="flex items-center gap-4 border-r pr-8 mr-4">
+                <div class="text-left">
+                    <div id="navUserName" class="text-lg font-black text-slate-800">APII</div>
+                    <div id="navUserRole" class="text-xs text-blue-600 font-bold uppercase tracking-widest leading-none">Admin</div>
+                </div>
+                <img id="navUserImg" src="https://via.placeholder.com/60" class="w-14 h-14 rounded-2xl object-cover border-2 border-white shadow-lg">
+            </div>
+        </header>
+
+        <main class="flex-1 overflow-y-auto p-10 bg-slate-50/50">
+            <div class="max-w-7xl mx-auto space-y-8">
+                
+                <div class="flex flex-wrap justify-between items-center gap-4">
+                    <div class="flex gap-3">
+                        <button onclick="downloadExcelSample()" class="btn-action bg-white text-slate-700 border border-slate-200">
+                            <span>📥</span> הורדת אקסל לדוגמה
+                        </button>
+                        <button onclick="document.getElementById('excelInput').click()" class="btn-action bg-white text-slate-700 border border-slate-200">
+                            <span>📤</span> טעינת קובץ אקסל
+                        </button>
+                        <input type="file" id="excelInput" class="hidden" accept=".xlsx, .xls">
+                    </div>
+                    <button onclick="exportAllLeads()" class="btn-action bg-green-600 text-white">
+                        <span>📊</span> הורדת כל הלידים (XLS)
+                    </button>
+                </div>
+
+                <div class="glass-card rounded-[2.5rem] shadow-xl overflow-hidden">
+                    <div class="p-8 border-b border-slate-100 flex justify-between items-center">
+                        <h2 class="text-2xl font-black text-slate-800">רשימת לידים פעילה</h2>
+                        <button onclick="openNewLeadModal()" class="bg-blue-600 text-white px-6 py-2.5 rounded-xl font-bold shadow-lg shadow-blue-200">+ הוסף ליד ידני</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-right">
+                            <thead class="bg-slate-50/50">
+                                <tr class="text-slate-400 text-[11px] font-black uppercase tracking-widest">
+                                    <th class="p-6">שם מלא</th>
+                                    <th class="p-6">טלפון</th>
+                                    <th class="p-6">מקור הגעה</th>
+                                    <th class="p-6">סטטוס</th>
+                                    <th class="p-6">דירוג (1-5)</th>
+                                    <th class="p-6">פעולות</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leadsTableBody" class="divide-y divide-slate-100">
+                                <tr class="hover:bg-blue-50/30 transition-all cursor-pointer group">
+                                    <td class="p-6 font-bold text-slate-800">ישראל ישראלי</td>
+                                    <td class="p-6 text-slate-500 font-medium">050-1234567</td>
+                                    <td class="p-6 text-slate-500 font-medium">פייסבוק Ads</td>
+                                    <td class="p-6"><span class="bg-amber-100 text-amber-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase">ממתין לשיחה</span></td>
+                                    <td class="p-6 text-amber-400">⭐⭐⭐⭐</td>
+                                    <td class="p-6">
+                                        <button class="bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-600">עריכה (360)</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
 
-    <div id="leadsContainer" class="grid gap-6">
-        </div>
-</div>
-
-<script type="module">
-    import { collection, getDocs, addDoc, updateDoc, doc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-    async function loadLeads() {
-        const container = document.getElementById('leadsContainer');
-        const snap = await getDocs(collection(window.db, "leads"));
-        
-        container.innerHTML = snap.docs.map(d => {
-            const lead = d.data();
-            const updates = lead.updates || [];
-            return `
-            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-                <div class="flex justify-between items-start mb-4">
-                    <div>
-                        <h3 class="text-xl font-bold">${lead.name}</h3>
-                        <p class="text-sm text-slate-400">${lead.phone || 'ללא טלפון'}</p>
-                    </div>
-                    <span class="bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded-full font-bold">ליד חדש</span>
-                </div>
-                
-                <div class="bg-slate-50 rounded-2xl p-4 mb-4 max-h-40 overflow-y-auto">
-                    <h4 class="text-xs font-bold text-slate-400 mb-2 uppercase">ציר זמן עדכונים (${updates.length})</h4>
-                    <div class="space-y-2">
-                        ${updates.map(u => `<div class="text-sm border-r-2 border-blue-400 pr-2 py-1 bg-white rounded shadow-sm">${u}</div>`).join('') || '<p class="text-gray-400 text-xs">אין עדכונים עדיין</p>'}
-                    </div>
-                </div>
-
-                <div class="flex gap-2">
-                    <input id="upd-${d.id}" placeholder="הוסף עדכון חדש..." class="flex-1 bg-slate-100 border-none rounded-xl p-2 text-sm focus:ring-2 focus:ring-blue-500">
-                    <button onclick="addUpdate('${d.id}')" class="bg-slate-800 text-white px-4 py-2 rounded-xl text-sm font-bold">עדכן</button>
-                </div>
-            </div>`;
-        }).join('');
-    }
-
-    window.addUpdate = async (id) => {
-        const input = document.getElementById(`upd-${id}`);
-        if (!input.value) return;
-        
-        const leadRef = doc(window.db, "leads", id);
-        const time = new Date().toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'});
-        await updateDoc(leadRef, {
-            updates: arrayUnion(`${time}: ${input.value}`)
-        });
-        input.value = "";
-        loadLeads();
-    };
-
-    window.addNewLead = async () => {
-        const name = prompt("שם הליד:");
-        if(name) {
-            await addDoc(collection(window.db, "leads"), { name, updates: [], timestamp: new Date() });
-            loadLeads();
+    <script type="module" src="app.js"></script>
+    <script>
+        // פונקציות אקסל (יושלמו בהתאם לספריות XLSX במידה ותרצה)
+        function downloadExcelSample() {
+            alert("מוריד פורמט אקסל לדוגמה...");
         }
-    };
 
-    window.onload = loadLeads;
-</script>
+        function exportAllLeads() {
+            alert("מייצא את כל הלידים לאקסל...");
+        }
+
+        // פתיחת כרטיס ליד (כאן יופיעו ה-45 פיצ'רים)
+        function openNewLeadModal() {
+            alert("פותח טופס הכולל 45 שדות מורחבים עבור הליד...");
+        }
+    </script>
+</body>
+</html>
