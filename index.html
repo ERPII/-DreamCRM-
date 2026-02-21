@@ -3,39 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DreamCRM - כניסה</title>
+    <title>DreamCRM - כניסה למערכת</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Assistant', sans-serif; }
+    </style>
 </head>
 <body class="bg-slate-900 flex items-center justify-center min-h-screen p-6">
     <div class="bg-slate-800/50 backdrop-blur-xl p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md border border-slate-700">
         <div class="text-center mb-8">
-            <h1 class="text-3xl font-black text-white italic">DreamCRM</h1>
-            <p class="text-slate-400 text-sm">ניהול חכם, בגרסה הכי טובה בעולם</p>
+            <h1 class="text-3xl font-black text-white italic tracking-tighter">DreamCRM</h1>
+            <p class="text-slate-400 text-sm font-bold">ניהול חכם, בגרסה הכי טובה בעולם</p>
         </div>
 
         <div class="space-y-4">
-            <input type="email" id="loginEmail" placeholder="אימייל" class="w-full p-4 rounded-2xl bg-slate-700 border-none text-white focus:ring-2 focus:ring-blue-500 outline-none">
-            <input type="password" id="loginPass" placeholder="סיסמה" class="w-full p-4 rounded-2xl bg-slate-700 border-none text-white focus:ring-2 focus:ring-blue-500 outline-none">
+            <input type="email" id="loginEmail" placeholder="אימייל" 
+                class="w-full p-4 rounded-2xl bg-slate-700/50 border border-slate-600 text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+            
+            <input type="password" id="loginPass" placeholder="סיסמה" 
+                class="w-full p-4 rounded-2xl bg-slate-700/50 border border-slate-600 text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
             
             <div class="text-right">
-                <button onclick="resetPassword()" class="text-xs text-blue-400 hover:underline">שכחת סיסמה?</button>
+                <button onclick="resetPassword()" class="text-xs text-blue-400 hover:underline font-bold">שכחת סיסמה?</button>
             </div>
 
-            <button onclick="loginEmail()" class="w-full bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-bold transition-all shadow-lg shadow-blue-500/20">מתחבר...</button>
+            <div class="flex gap-3 mt-2">
+                <button onclick="loginEmail()" 
+                    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black transition-all shadow-lg shadow-blue-500/20">
+                    התחברות
+                </button>
+                <button onclick="registerEmail()" 
+                    class="flex-1 bg-slate-700 hover:bg-slate-600 text-white p-4 rounded-2xl font-black transition-all border border-slate-500">
+                    יצירת חשבון
+                </button>
+            </div>
             
             <div class="relative py-4 flex items-center">
                 <div class="flex-grow border-t border-slate-700"></div>
-                <span class="px-3 text-slate-500 text-xs">או</span>
+                <span class="px-3 text-slate-500 text-xs font-black">או</span>
                 <div class="flex-grow border-t border-slate-700"></div>
             </div>
 
-            <button onclick="loginWithGoogle()" class="w-full bg-white text-slate-900 p-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-100 transition-all">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" width="18">
-                התחברות עם Google
+            <button onclick="loginWithGoogle()" 
+                class="w-full bg-white text-slate-900 p-4 rounded-2xl font-black flex items-center justify-center gap-3 hover:bg-slate-100 transition-all shadow-xl">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" width="20">
+                התחברות מהירה עם Google
             </button>
         </div>
+
+        <p id="statusMsg" class="mt-6 text-center text-sm font-bold text-orange-400 hidden"></p>
     </div>
+
     <script type="module" src="app.js"></script>
 </body>
 </html>
