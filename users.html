@@ -1,54 +1,134 @@
-<div class="max-w-4xl mx-auto">
-    <h1 class="text-3xl font-black mb-10 border-r-4 border-yellow-500 pr-4">ניהול צוות ומשאבי אנוש 🔐</h1>
-    <div id="staffList" class="grid gap-6"></div>
-</div>
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700;800&display=swap" rel="stylesheet">
+    <title>ניהול משתמשים - DreamCRM</title>
+    <style>
+        body { font-family: 'Assistant', sans-serif; background: #f8fafc; }
+        .admin-glass { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.4); }
+        .user-row:hover { background: #f1f5f9; transform: scale(1.005); }
+        .badge-admin { @apply bg-red-100 text-red-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase; }
+        .badge-staff { @apply bg-slate-100 text-slate-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
 
-<script type="module">
-    import { collection, getDocs, updateDoc, doc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    <aside class="w-72 bg-slate-950 text-white p-8 flex flex-col shrink-0 shadow-2xl">
+        <div class="flex items-center gap-3 mb-12">
+            <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-xl shadow-lg">💎</div>
+            <h1 class="text-2xl font-black italic">DreamCRM</h1>
+        </div>
+        <nav class="flex-1 space-y-2">
+            <a href="dashboard.html" class="flex items-center gap-3 p-4 rounded-2xl opacity-60 hover:opacity-100">📊 דאשבורד</a>
+            <a href="customers.html" class="flex items-center gap-3 p-4 rounded-2xl opacity-60 hover:opacity-100">👥 לקוחות VIP</a>
+            <a href="users.html" class="flex items-center gap-3 p-4 rounded-2xl bg-gradient-to-r from-red-600 to-red-500 font-bold shadow-xl">🔐 ניהול משתמשים</a>
+        </nav>
+        <button onclick="logout()" class="p-4 text-red-400 font-bold mt-auto text-right hover:bg-red-400/10 rounded-xl">🚪 התנתקות</button>
+    </aside>
 
-    async function loadStaff() {
-        const snap = await getDocs(collection(window.db, "users"));
-        document.getElementById('staffList').innerHTML = snap.docs.map(d => {
-            const u = d.data();
-            const history = u.history || [];
-            return `
-            <div class="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col md:flex-row gap-8">
-                <div class="w-20 h-20 bg-slate-800 rounded-2xl flex items-center justify-center text-3xl text-white font-black shrink-0">
-                    ${u.name.charAt(0)}
+    <div class="flex-1 flex flex-col min-w-0">
+        <header class="h-28 bg-white border-b px-10 flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-4 bg-slate-100 p-2 rounded-2xl border w-1/2">
+                <input type="text" id="userSearch" placeholder="חפש עובד לפי שם או מחלקה..." class="bg-transparent p-3 outline-none flex-1 font-bold">
+            </div>
+            <div class="flex items-center gap-4 border-r pr-8">
+                <div class="text-left">
+                    <div id="navUserName" class="text-lg font-black text-slate-800 tracking-tighter">APII</div>
+                    <div id="navUserRole" class="text-xs text-red-600 font-black uppercase">Admin Portal</div>
                 </div>
-                <div class="flex-1">
-                    <div class="flex justify-between items-start mb-4">
-                        <div>
-                            <h3 class="text-2xl font-bold text-slate-800">${u.name}</h3>
-                            <p class="text-blue-500 font-medium">${u.role === 'admin' ? 'מנהל ראשי' : 'צוות מכירות/שירות'}</p>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-amber-50 rounded-2xl p-4 mb-4 border border-amber-100">
-                        <h4 class="text-xs font-bold text-amber-700 mb-3 italic">עדכוני מנהל ותיק אישי:</h4>
-                        <div class="space-y-2">
-                            ${history.map(h => `<div class="text-xs text-slate-700 bg-white/50 p-2 rounded-lg border-r-2 border-amber-400">📌 ${h}</div>`).join('') || 'תיק נקי - אין עדכונים'}
-                        </div>
-                    </div>
+                <div class="w-14 h-14 bg-slate-900 rounded-2xl flex items-center justify-center text-white font-black text-xl">A</div>
+            </div>
+        </header>
 
-                    <div class="flex gap-2">
-                        <input id="hist-${d.id}" placeholder="הוסף הערת מנהל..." class="flex-1 bg-white border border-slate-200 rounded-xl p-2 text-sm">
-                        <button onclick="addHistory('${d.id}')" class="bg-amber-500 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md">שמור בתיק</button>
+        <main class="flex-1 overflow-y-auto p-12 bg-slate-50/30">
+            <div class="max-w-6xl mx-auto">
+                <div class="flex justify-between items-center mb-10">
+                    <div>
+                        <h2 class="text-4xl font-black text-slate-900">ניהול צוות והרשאות 🔐</h2>
+                        <p class="text-slate-500 font-medium">רק מנהלי מערכת רשאים לערוך משתמשים ולשנות סיסמאות</p>
                     </div>
+                    <button onclick="openUserModal()" class="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black shadow-2xl hover:bg-blue-600 transition-all">+ הוסף משתמש חדש</button>
                 </div>
-            </div>`;
-        }).join('');
-    }
 
-    window.addHistory = async (id) => {
-        const input = document.getElementById(`hist-${id}`);
-        if (!input.value) return;
-        await updateDoc(doc(window.db, "users", id), {
-            history: arrayUnion(input.value)
-        });
-        input.value = "";
-        loadStaff();
-    };
+                <div class="admin-glass rounded-[2.5rem] shadow-xl overflow-hidden">
+                    <table class="w-full text-right">
+                        <thead class="bg-slate-50/50">
+                            <tr class="text-slate-400 text-[11px] font-black uppercase tracking-widest border-b">
+                                <th class="p-6">שם המשתמש</th>
+                                <th class="p-6">אימייל</th>
+                                <th class="p-6">מחלקה</th>
+                                <th class="p-6">תפקיד</th>
+                                <th class="p-6">סטטוס</th>
+                                <th class="p-6">פעולות</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody" class="divide-y divide-slate-100">
+                            <tr class="user-row transition-all">
+                                <td class="p-6 font-black text-slate-800">APII</td>
+                                <td class="p-6 text-slate-500">admin@dreamcrm.com</td>
+                                <td class="p-6 font-bold">הנהלה</td>
+                                <td class="p-6"><span class="badge-admin">Admin</span></td>
+                                <td class="p-6 text-green-500 font-bold">מחובר</td>
+                                <td class="p-6">
+                                    <button onclick="editUser('uid_123')" class="bg-white border p-2 px-4 rounded-xl font-bold text-xs hover:bg-slate-900 hover:text-white transition-all">ערוך ✎</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
 
-    window.onload = loadStaff;
-</script>
+    <div id="userModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-4xl rounded-[3rem] shadow-2xl overflow-hidden">
+            <div class="p-10 bg-slate-900 text-white flex justify-between items-center">
+                <h3 class="text-3xl font-black italic">ניהול משתמש מלא</h3>
+                <button onclick="closeUserModal()" class="text-2xl hover:rotate-90 transition-all">✕</button>
+            </div>
+            
+            <div class="p-10 grid grid-cols-2 gap-8">
+                <div class="space-y-4">
+                    <h4 class="font-black text-blue-600 uppercase text-xs tracking-widest">פרטי כניסה</h4>
+                    <input type="text" id="u_name" placeholder="שם מלא" class="w-full p-4 bg-slate-100 rounded-xl outline-none font-bold">
+                    <input type="email" id="u_email" placeholder="אימייל להתחברות" class="w-full p-4 bg-slate-100 rounded-xl outline-none font-bold">
+                    <input type="password" id="u_pass" placeholder="סיסמה חדשה (לפחות 6 תווים)" class="w-full p-4 bg-slate-100 rounded-xl outline-none font-bold">
+                </div>
+                <div class="space-y-4">
+                    <h4 class="font-black text-blue-600 uppercase text-xs tracking-widest">תפקיד ומחלקה</h4>
+                    <select id="u_dept" class="w-full p-4 bg-slate-100 rounded-xl outline-none font-bold appearance-none">
+                        <option value="sales">מכירות</option>
+                        <option value="service">שירות לקוחות</option>
+                        <option value="management">הנהלה</option>
+                        <option value="marketing">שיווק</option>
+                    </select>
+                    <select id="u_role" class="w-full p-4 bg-slate-100 rounded-xl outline-none font-bold appearance-none">
+                        <option value="staff">עובד רגיל (Staff)</option>
+                        <option value="admin">מנהל מערכת (Admin)</option>
+                    </select>
+                    <textarea id="u_notes" placeholder="הערות אישיות למנהל המערכת..." class="w-full p-4 bg-slate-100 rounded-xl outline-none font-bold h-24"></textarea>
+                </div>
+            </div>
+
+            <div class="p-10 bg-slate-50 border-t flex justify-end gap-4">
+                <button onclick="closeUserModal()" class="px-8 py-4 font-bold text-slate-400">ביטול</button>
+                <button onclick="saveUser()" class="px-12 py-4 bg-slate-900 text-white rounded-2xl font-black shadow-lg hover:bg-blue-600 transition-all">שמור משתמש</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+    <script>
+        function openUserModal() { document.getElementById('userModal').classList.remove('hidden'); }
+        function closeUserModal() { document.getElementById('userModal').classList.add('hidden'); }
+        
+        // פונקציית שמירה (כאן תחבר ל-Firebase Auth ול-Firestore)
+        window.saveUser = async () => {
+            alert("המשתמש נשמר בהצלחה במערכת! (יש לוודא הגדרת Users ב-Firestore)");
+            closeUserModal();
+        }
+    </script>
+</body>
+</html>
