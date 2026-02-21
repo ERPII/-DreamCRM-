@@ -5,10 +5,9 @@ import {
     sendPasswordResetEmail, signOut 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { 
-    getFirestore, doc, getDoc, setDoc, updateDoc, collection, serverTimestamp 
+    getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, serverTimestamp, getDocs 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// ה-Config האמיתי שלך
 const firebaseConfig = {
   apiKey: "AIzaSyDV-ncOuncy-7HZZJnCMe4uis9ZV2QczYw",
   authDomain: "dreamcrm-2d69d.firebaseapp.com",
@@ -25,78 +24,67 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
 
-// --- ניהול כניסה ורישום משתמשים ---
-
-// לוגיקת בדיקת סטטוס משתמש (אישור/נעילה)
+// בדיקת סטטוס משתמש והגנה על דפים
 onAuthStateChanged(auth, async (user) => {
+    const isLoginPage = window.location.pathname.includes('index.html') || window.location.pathname === '/';
+    
     if (user) {
         const userRef = doc(db, "users", user.uid);
         const userDoc = await getDoc(userRef);
 
         if (userDoc.exists()) {
             const userData = userDoc.data();
-            
             if (userData.status === "locked") {
-                alert("גישה נדחתה: החשבון נעול.");
+                alert("החשבון ננעל.");
                 signOut(auth);
+                if (!isLoginPage) window.location.href = 'index.html';
                 return;
             }
             if (userData.approved !== true) {
-                alert("חשבון ממתין לאישור מנהל.");
+                alert("ממתין לאישור מנהל.");
                 signOut(auth);
+                if (!isLoginPage) window.location.href = 'index.html';
                 return;
             }
-            // אם הכל תקין, המערכת תישאר מחוברת
+            // אם מאושר ונמצא בדף לוגין - העבר לדאשבורד
+            if (isLoginPage) window.location.href = 'dashboard.html';
         } else {
-            // יצירת משתמש חדש ב-Firestore אם הוא לא קיים
+            // יצירת משתמש חדש
             await setDoc(userRef, {
                 email: user.email,
                 name: user.displayName || "משתמש חדש",
                 role: "user",
-                approved: false, // ברירת מחדל: דורש אישור
+                approved: false,
                 status: "active",
                 createdAt: serverTimestamp()
             });
-            alert("נרשמת בהצלחה! המתן לאישור אדמין.");
+            alert("נרשמת! המתן לאישור מנהל.");
             signOut(auth);
         }
+    } else {
+        if (!isLoginPage) window.location.href = 'index.html';
     }
 });
 
-// פונקציית התחברות/רישום עם אימייל
+// פונקציות גלובליות לחלוטין
 window.loginEmail = async () => {
     const email = document.getElementById('loginEmail').value;
     const pass = document.getElementById('loginPass').value;
-    
     try {
-        // ננסה קודם להתחבר
         await signInWithEmailAndPassword(auth, email, pass);
-        window.location.href = 'dashboard.html';
-    } catch (error) {
-        if (error.code === 'auth/user-not-found') {
-            // אם המשתמש לא קיים, ניצור אותו
-            try {
-                await createUserWithEmailAndPassword(auth, email, pass);
-            } catch (regError) { alert("שגיאה ברישום: " + regError.message); }
-        } else {
-            alert("שגיאה: " + error.message);
-        }
+    } catch (e) {
+        if (e.code === 'auth/user-not-found') {
+            await createUserWithEmailAndPassword(auth, email, pass);
+        } else { alert("שגיאה: " + e.message); }
     }
 };
 
-// התחברות מהירה עם גוגל
-window.loginWithGoogle = async () => {
-    try {
-        await signInWithPopup(auth, googleProvider);
-    } catch (e) { alert("שגיאת גוגל: " + e.message); }
-};
-
-window.resetPassword = async () => {
+window.loginWithGoogle = () => signInWithPopup(auth, googleProvider);
+window.resetPassword = () => {
     const email = document.getElementById('loginEmail').value;
-    if (!email) return alert("הזן אימייל");
-    await sendPasswordResetEmail(auth, email);
-    alert("נשלח אימייל לאיפוס סיסמה.");
+    if (email) sendPasswordResetEmail(auth, email).then(() => alert("נשלח אימייל!"));
 };
+window.logout = () => signOut(auth);
 
-window.logout = () => signOut(auth).then(() => window.location.href = 'index.html');
-export { auth, db };
+// ייצוא לצורך שימוש בדפים אחרים
+export { db, auth };
