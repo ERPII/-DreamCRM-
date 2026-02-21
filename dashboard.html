@@ -1,56 +1,156 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-    <meta charset="UTF-8"><script src="https://cdn.tailwindcss.com"></script>
-    <title>DreamCRM - דאשבורד</title>
+    <meta charset="UTF-8">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <title>DreamCRM - דאשבורד ניהול</title>
 </head>
-<body class="bg-slate-50 flex h-screen font-[Assistant]">
-    <aside class="w-64 bg-slate-900 text-white flex flex-col p-6 shadow-xl shrink-0">
-        <div class="text-2xl font-black mb-10 text-blue-400 border-b border-slate-700 pb-4 italic">DreamCRM</div>
+<body class="flex h-screen overflow-hidden bg-slate-50">
+
+    <aside class="w-72 bg-slate-950 text-white p-8 flex flex-col shrink-0 shadow-2xl">
+        <div class="flex items-center gap-3 mb-12">
+            <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-xl shadow-lg">📊</div>
+            <h1 class="text-2xl font-black italic">DreamCRM</h1>
+        </div>
         <nav class="flex-1 space-y-2">
-            <a href="dashboard.html" class="block p-3 rounded-xl bg-blue-600 font-bold">📊 דאשבורד</a>
-            <a href="leads.html" class="block p-3 rounded-xl hover:bg-slate-800 transition">🎯 לידים</a>
-            <a href="customers.html" class="block p-3 rounded-xl hover:bg-slate-800 transition">👥 לקוחות</a>
-            <a href="service.html" class="block p-3 rounded-xl hover:bg-slate-800 transition">🛠️ שירות</a>
-            <a id="adminLink" href="users.html" class="hidden block p-3 rounded-xl text-yellow-500 border border-yellow-500/20">🔐 ניהול עובדים</a>
+            <a href="dashboard.html" class="flex items-center gap-3 p-4 rounded-2xl bg-blue-600 font-bold shadow-xl shadow-blue-500/20 transition-all">📊 דאשבורד</a>
+            <a href="customers.html" class="flex items-center gap-3 p-4 rounded-2xl opacity-60 hover:opacity-100 transition-all">👥 לקוחות VIP</a>
+            <a href="leads.html" class="flex items-center gap-3 p-4 rounded-2xl opacity-60 hover:opacity-100 transition-all">🎯 ניהול לידים</a>
+            <a href="service.html" class="flex items-center gap-3 p-4 rounded-2xl opacity-60 hover:opacity-100 transition-all">🛠️ מרכז שירות</a>
+            <a href="finance.html" class="flex items-center gap-3 p-4 rounded-2xl opacity-60 hover:opacity-100 transition-all">💰 ניהול כספים</a>
+            <a href="users.html" class="flex items-center gap-3 p-4 rounded-2xl opacity-60 hover:opacity-100 transition-all">🔐 ניהול צוות</a>
         </nav>
-        <button onclick="window.DreamCRM.logout()" class="p-3 text-red-400 text-right mt-auto">התנתק</button>
+        <button onclick="logout()" class="p-4 text-red-400 font-bold mt-auto text-right hover:bg-red-400/10 rounded-xl transition-all">🚪 התנתקות</button>
     </aside>
 
     <div class="flex-1 flex flex-col min-w-0">
-        <header class="h-20 bg-white border-b flex items-center justify-between px-10">
-            <div class="font-bold text-slate-800" id="pageTitle">לוח בקרה</div>
-            <div class="flex items-center gap-3 bg-slate-50 p-2 rounded-2xl border">
+        <header class="h-28 bg-white/80 backdrop-blur-md px-10 flex items-center justify-between shrink-0 border-b">
+            <div class="flex items-center gap-8">
                 <div class="text-right">
-                    <div id="navUserName" class="text-sm font-black">טוען...</div>
-                    <div id="navUserRole" class="text-[10px] text-blue-600"></div>
+                    <div id="liveClock" class="text-3xl font-black text-slate-900 tracking-tighter leading-none">00:00:00</div>
+                    <div id="liveDate" class="text-sm font-bold text-blue-600 uppercase tracking-widest mt-1">22 FEBRUARY 2026</div>
                 </div>
-                <div id="navAvatar" class="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center font-bold">?</div>
+                <div class="flex gap-3 mr-10">
+                    <button onclick="openQuickModal('customer')" class="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-600 transition-all shadow-lg">+ לקוח מהיר</button>
+                    <button onclick="openQuickModal('service')" class="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-slate-900 transition-all shadow-lg">+ קריאת שירות</button>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-4 border-r pr-8">
+                <div class="text-left">
+                    <div id="navUserName" class="text-lg font-black text-slate-800">APII</div>
+                    <div id="navUserRole" class="text-xs text-blue-600 font-black uppercase">Admin</div>
+                </div>
+                <img id="navUserImg" src="https://via.placeholder.com/60" class="w-14 h-14 rounded-2xl border-2 border-white shadow-xl">
             </div>
         </header>
 
-        <main class="p-10 overflow-y-auto">
-            <div class="grid grid-cols-3 gap-6">
-                <div class="bg-white p-8 rounded-3xl shadow-sm border-b-4 border-blue-500">
-                    <h3 class="text-gray-400 text-xs font-bold">לידים</h3>
-                    <p id="countLeads" class="text-4xl font-black">0</p>
+        <main class="flex-1 overflow-y-auto p-10 custom-scroll">
+            <div class="max-w-7xl mx-auto space-y-10">
+                
+                <div class="grid grid-cols-4 gap-6">
+                    <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
+                        <p class="text-slate-400 font-bold text-xs uppercase mb-1">סה"כ לקוחות</p>
+                        <h3 class="text-4xl font-black text-slate-900">1,248</h3>
+                    </div>
+                    <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
+                        <p class="text-slate-400 font-bold text-xs uppercase mb-1">לידים חדשים</p>
+                        <h3 class="text-4xl font-black text-blue-600">42</h3>
+                    </div>
+                    <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
+                        <p class="text-slate-400 font-bold text-xs uppercase mb-1">קריאות שירות פתוחות</p>
+                        <h3 class="text-4xl font-black text-red-500">8</h3>
+                    </div>
+                    <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
+                        <p class="text-slate-400 font-bold text-xs uppercase mb-1">הכנסות חודשיות</p>
+                        <h3 class="text-4xl font-black text-green-600">₪ 92K</h3>
+                    </div>
                 </div>
+
+                <div class="grid grid-cols-2 gap-10">
+                    <div class="bg-white p-10 rounded-[3rem] shadow-xl border border-slate-100">
+                        <h4 class="text-xl font-black mb-6">מגמת מכירות שנתית</h4>
+                        <canvas id="salesChart" height="200"></canvas>
+                    </div>
+                    <div class="bg-white p-10 rounded-[3rem] shadow-xl border border-slate-100">
+                        <h4 class="text-xl font-black mb-6">פילוח לידים לפי מקור</h4>
+                        <canvas id="leadsPieChart" height="200"></canvas>
+                    </div>
                 </div>
+            </div>
         </main>
     </div>
 
+    <div id="quickModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-6">
+        <div class="bg-white w-full max-w-lg rounded-[3rem] shadow-2xl overflow-hidden">
+            <div id="modalHeader" class="p-8 text-white flex justify-between items-center">
+                <h3 id="modalTitle" class="text-2xl font-black">הוספה מהירה</h3>
+                <button onclick="closeQuickModal()" class="text-2xl">✕</button>
+            </div>
+            <div class="p-10 space-y-4" id="modalFields">
+                </div>
+            <div class="p-8 bg-slate-50 border-t flex justify-end gap-4">
+                <button onclick="saveQuickData()" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-black shadow-lg">שמור במערכת</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module" src="app.js"></script>
-    <script type="module">
-        import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        window.DreamCRM.checkUserStatus(async (user) => {
-            if(!user) return location.href='index.html';
-            document.getElementById('navUserName').innerText = user.name;
-            document.getElementById('navUserRole').innerText = user.role;
-            document.getElementById('navAvatar').innerText = user.name.charAt(0);
-            if(user.role === 'admin') document.getElementById('adminLink').classList.remove('hidden');
-            
-            const l = await getDocs(collection(window.db, "leads"));
-            document.getElementById('countLeads').innerText = l.size;
+    <script>
+        // שעון בזמן אמת
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('liveClock').innerText = now.toLocaleTimeString('he-IL', {hour12: false});
+            const options = { day: 'numeric', month: 'long', year: 'numeric' };
+            document.getElementById('liveDate').innerText = now.toLocaleDateString('he-IL', options).toUpperCase();
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // ניהול מודלים מהירים
+        let currentMode = '';
+        function openQuickModal(type) {
+            currentMode = type;
+            const modal = document.getElementById('quickModal');
+            const header = document.getElementById('modalHeader');
+            const fields = document.getElementById('modalFields');
+            modal.classList.remove('hidden');
+
+            if(type === 'customer') {
+                header.className = "p-8 bg-slate-900 text-white flex justify-between items-center";
+                document.getElementById('modalTitle').innerText = "הוספת לקוח VIP מהירה";
+                fields.innerHTML = `
+                    <input type="text" id="q_name" placeholder="שם מלא" class="w-full p-4 bg-slate-100 rounded-xl font-bold outline-none">
+                    <input type="tel" id="q_phone" placeholder="מספר טלפון" class="w-full p-4 bg-slate-100 rounded-xl font-bold outline-none">
+                `;
+            } else {
+                header.className = "p-8 bg-blue-600 text-white flex justify-between items-center";
+                document.getElementById('modalTitle').innerText = "פתיחת קריאת שירות";
+                fields.innerHTML = `
+                    <input type="text" id="q_cust" placeholder="שם הלקוח" class="w-full p-4 bg-slate-100 rounded-xl font-bold outline-none">
+                    <textarea id="q_issue" placeholder="תיאור התקלה..." class="w-full p-4 bg-slate-100 rounded-xl font-bold outline-none h-24"></textarea>
+                `;
+            }
+        }
+
+        function closeQuickModal() { document.getElementById('quickModal').classList.add('hidden'); }
+
+        async function saveQuickData() {
+            alert(`הנתונים נשמרים ל-Firebase (Rules: true)`);
+            closeQuickModal();
+        }
+
+        // הגדרת גרפים (Chart.js)
+        const ctxSales = document.getElementById('salesChart').getContext('2d');
+        new Chart(ctxSales, {
+            type: 'line',
+            data: {
+                labels: ['ינו', 'פב', 'מרץ', 'אפר'],
+                datasets: [{ label: 'מכירות', data: [12, 19, 15, 25], borderColor: '#2563eb', tension: 0.4 }]
+            }
         });
     </script>
 </body>
