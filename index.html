@@ -1,48 +1,41 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-    <meta charset="UTF-8"><script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DreamCRM - כניסה</title>
-    <style>
-        body { background: radial-gradient(circle at top right, #1e293b, #020617); font-family: sans-serif; }
-        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); }
-    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
 </head>
-<body class="min-h-screen flex items-center justify-center p-6 text-white">
-    <div class="glass w-full max-w-md p-10 rounded-[2.5rem] shadow-2xl text-center">
-        <div class="mb-8">
-            <div class="text-5xl mb-4">🚀</div>
-            <h1 class="text-3xl font-black italic tracking-tighter">DreamCRM</h1>
-            <p class="text-slate-500 text-sm">המערכת שלך, בגרסה הכי טובה בעולם</p>
+<body class="bg-slate-900 flex items-center justify-center min-h-screen p-6">
+    <div class="bg-slate-800/50 backdrop-blur-xl p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md border border-slate-700">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-black text-white italic">DreamCRM</h1>
+            <p class="text-slate-400 text-sm">ניהול חכם, בגרסה הכי טובה בעולם</p>
         </div>
 
         <div class="space-y-4">
-            <input id="email" type="email" placeholder="אימייל עבודה" class="w-full bg-slate-800/50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-600 border border-slate-700">
-            <input id="pass" type="password" placeholder="סיסמה" class="w-full bg-slate-800/50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-600 border border-slate-700">
-            <button onclick="doLogin()" id="lBtn" class="w-full bg-blue-600 hover:bg-blue-700 py-4 rounded-2xl font-bold shadow-lg shadow-blue-500/20 transition-all">התחברות</button>
+            <input type="email" id="loginEmail" placeholder="אימייל" class="w-full p-4 rounded-2xl bg-slate-700 border-none text-white focus:ring-2 focus:ring-blue-500 outline-none">
+            <input type="password" id="loginPass" placeholder="סיסמה" class="w-full p-4 rounded-2xl bg-slate-700 border-none text-white focus:ring-2 focus:ring-blue-500 outline-none">
+            
+            <div class="text-right">
+                <button onclick="resetPassword()" class="text-xs text-blue-400 hover:underline">שכחת סיסמה?</button>
+            </div>
+
+            <button onclick="loginEmail()" class="w-full bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-bold transition-all shadow-lg shadow-blue-500/20">מתחבר...</button>
+            
+            <div class="relative py-4 flex items-center">
+                <div class="flex-grow border-t border-slate-700"></div>
+                <span class="px-3 text-slate-500 text-xs">או</span>
+                <div class="flex-grow border-t border-slate-700"></div>
+            </div>
+
+            <button onclick="loginWithGoogle()" class="w-full bg-white text-slate-900 p-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-100 transition-all">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" width="18">
+                התחברות עם Google
+            </button>
         </div>
-
-        <div class="flex items-center my-8 text-slate-700"><div class="flex-1 border-t"></div><span class="px-4">OR</span><div class="flex-1 border-t"></div></div>
-
-        <button onclick="googleLogin()" class="w-full bg-white text-slate-900 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform shadow-md">
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5">
-            התחברות מהירה עם Google
-        </button>
     </div>
-
     <script type="module" src="app.js"></script>
-    <script type="module">
-        import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        window.doLogin = async () => {
-            const btn = document.getElementById('lBtn'); btn.innerText = "מתחבר...";
-            const res = await window.DreamCRM.login(document.getElementById('email').value, document.getElementById('pass').value);
-            if(res.success) window.location.href = 'dashboard.html';
-            else { alert(res.error); btn.innerText = "התחברות"; }
-        };
-        window.googleLogin = async () => {
-            try { await signInWithPopup(getAuth(), new GoogleAuthProvider()); window.location.href = 'dashboard.html'; }
-            catch(e) { console.error(e); }
-        };
-    </script>
 </body>
 </html>
