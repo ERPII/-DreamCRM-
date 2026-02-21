@@ -1,53 +1,48 @@
-<div class="max-w-5xl mx-auto">
-    <div class="flex justify-between items-center mb-8">
-        <h1 class="text-3xl font-black">ניהול לידים 🎯</h1>
-        <div class="flex gap-2">
-            <input type="file" id="excelIn" class="hidden" accept=".xlsx">
-            <label for="excelIn" class="bg-green-600 text-white px-4 py-2 rounded-xl cursor-pointer">ייבוא אקסל</label>
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8"><script src="https://cdn.tailwindcss.com"></script>
+    <title>DreamCRM - כניסה</title>
+    <style>
+        body { background: radial-gradient(circle at top right, #1e293b, #020617); font-family: sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-6 text-white">
+    <div class="glass w-full max-w-md p-10 rounded-[2.5rem] shadow-2xl text-center">
+        <div class="mb-8">
+            <div class="text-5xl mb-4">🚀</div>
+            <h1 class="text-3xl font-black italic tracking-tighter">DreamCRM</h1>
+            <p class="text-slate-500 text-sm">המערכת שלך, בגרסה הכי טובה בעולם</p>
         </div>
+
+        <div class="space-y-4">
+            <input id="email" type="email" placeholder="אימייל עבודה" class="w-full bg-slate-800/50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-600 border border-slate-700">
+            <input id="pass" type="password" placeholder="סיסמה" class="w-full bg-slate-800/50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-600 border border-slate-700">
+            <button onclick="doLogin()" id="lBtn" class="w-full bg-blue-600 hover:bg-blue-700 py-4 rounded-2xl font-bold shadow-lg shadow-blue-500/20 transition-all">התחברות</button>
+        </div>
+
+        <div class="flex items-center my-8 text-slate-700"><div class="flex-1 border-t"></div><span class="px-4">OR</span><div class="flex-1 border-t"></div></div>
+
+        <button onclick="googleLogin()" class="w-full bg-white text-slate-900 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform shadow-md">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5">
+            התחברות מהירה עם Google
+        </button>
     </div>
 
-    <div class="mb-6 relative">
-        <input type="text" id="searchInput" placeholder="חפש לפי שם, טלפון, מייל או שם עסק..." 
-               class="w-full p-4 pr-12 rounded-2xl border-none shadow-sm focus:ring-2 focus:ring-blue-500 outline-none">
-        <span class="absolute right-4 top-4 opacity-30 text-xl">🔍</span>
-    </div>
-
-    <div id="list" class="grid gap-4"></div>
-</div>
-
-<script type="module">
-    import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    let allLeads = [];
-
-    async function load() {
-        const snap = await getDocs(collection(window.db, "leads"));
-        allLeads = snap.docs.map(d => ({id: d.id, ...d.data()}));
-        render(allLeads);
-    }
-
-    function render(data) {
-        document.getElementById('list').innerHTML = data.map(l => `
-            <div class="bg-white p-6 rounded-2xl shadow-sm flex justify-between items-center">
-                <div>
-                    <h3 class="font-bold text-lg">${l.name}</h3>
-                    <p class="text-sm text-gray-500">${l.businessName || 'עסק לא צוין'} | ${l.phone || ''}</p>
-                </div>
-                <button class="text-blue-600 font-bold">צפה בתיק</button>
-            </div>
-        `).join('');
-    }
-
-    // הפעלת החיפוש בזמן אמת
-    document.getElementById('searchInput').oninput = (e) => {
-        const filtered = window.DreamCRM.filterData(allLeads, e.target.value);
-        render(filtered);
-    };
-
-    document.getElementById('excelIn').onchange = async (e) => {
-        await window.DreamCRM.importLeadsFromExcel(e.target.files[0]);
-        load();
-    };
-
-    window.onload = load;
-</script>
+    <script type="module" src="app.js"></script>
+    <script type="module">
+        import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        window.doLogin = async () => {
+            const btn = document.getElementById('lBtn'); btn.innerText = "מתחבר...";
+            const res = await window.DreamCRM.login(document.getElementById('email').value, document.getElementById('pass').value);
+            if(res.success) window.location.href = 'dashboard.html';
+            else { alert(res.error); btn.innerText = "התחברות"; }
+        };
+        window.googleLogin = async () => {
+            try { await signInWithPopup(getAuth(), new GoogleAuthProvider()); window.location.href = 'dashboard.html'; }
+            catch(e) { console.error(e); }
+        };
+    </script>
+</body>
+</html>
