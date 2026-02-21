@@ -1,113 +1,108 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, serverTimestamp, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { 
+    getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, 
+    sendPasswordResetEmail, signOut 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { 
+    getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs, serverTimestamp 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// --- הגדרות ה-Firebase שלך (חובה להעתיק מה-Console) ---
+// ה-Config המעודכן שלך
 const firebaseConfig = {
-    apiKey: "AIzaSy...", // העתק מה-Project Settings ב-Firebase Console
-    authDomain: "dreamcrm-2d69d.firebaseapp.com",
-    projectId: "dreamcrm-2d69d",
-    storageBucket: "dreamcrm-2d69d.appspot.com",
-    messagingSenderId: "YOUR_ID",
-    appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyDV-ncOuncy-7HZZJnCMe4uis9ZV2QczYw",
+  authDomain: "dreamcrm-2d69d.firebaseapp.com",
+  databaseURL: "https://dreamcrm-2d69d-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "dreamcrm-2d69d",
+  storageBucket: "dreamcrm-2d69d.firebasestorage.app",
+  messagingSenderId: "124987219085",
+  appId: "1:124987219085:web:87edf1c9024a82950ad6c4",
+  measurementId: "G-KCVYGGLE0F"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const googleProvider = new GoogleAuthProvider();
 
-// --- 1. מערכת שמירת נתונים (לכל הדפים) ---
-
-// שמירת לקוח (customers.html / dashboard.html)
-window.saveCustomerData = async () => {
-    try {
-        const name = document.getElementById('editName')?.value || document.getElementById('q_name')?.value;
-        const phone = document.getElementById('editPhone')?.value || document.getElementById('q_phone')?.value;
-
-        if (!name) return alert("נא למלא שם לקוח");
-
-        await addDoc(collection(db, "customers"), {
-            fullName: name,
-            phone: phone || "לא הוזן",
-            type: "VIP",
-            createdAt: serverTimestamp()
-        });
-        alert("הלקוח נשמר בשרת בהצלחה!");
-        location.reload();
-    } catch (e) { console.error("שגיאת שמירה:", e); }
-};
-
-// שמירת ליד (leads.html)
-window.saveLead = async () => {
-    try {
-        const name = document.getElementById('leadName')?.value;
-        await addDoc(collection(db, "leads"), {
-            name: name,
-            source: document.getElementById('leadSource')?.value || "אורגני",
-            status: "חדש",
-            timestamp: serverTimestamp()
-        });
-        alert("ליד חדש התווסף!");
-        location.reload();
-    } catch (e) { console.error(e); }
-};
-
-// שמירת קריאת שירות (service.html)
-window.saveTicket = async () => {
-    try {
-        const cust = document.getElementById('t_cust')?.value || document.getElementById('q_cust')?.value;
-        const desc = document.getElementById('t_desc')?.value || document.getElementById('q_issue')?.value;
-
-        if (!cust || !desc) return alert("מלא פרטי קריאה");
-
-        await addDoc(collection(db, "service_tickets"), {
-            customer: cust,
-            description: desc,
-            status: "בטיפול פעיל",
-            ticketId: "SR-" + Math.floor(1000 + Math.random() * 9000),
-            createdAt: serverTimestamp()
-        });
-        alert("קריאת השירות נפתחה!");
-        location.reload();
-    } catch (e) { console.error(e); }
-};
-
-// שמירת תנועה כספית (finance.html)
-window.saveTransaction = async () => {
-    try {
-        const amount = document.getElementById('f_amount')?.value;
-        await addDoc(collection(db, "finance"), {
-            amount: parseFloat(amount),
-            type: document.getElementById('f_type')?.value,
-            description: document.getElementById('f_desc')?.value,
-            date: serverTimestamp()
-        });
-        alert("התנועה הכספית עודכנה!");
-        location.reload();
-    } catch (e) { console.error(e); }
-};
-
-// --- 2. ניהול כניסה והרשאות ---
-
-// בדיקת אדמין (לדפי כספים וניהול צוות)
-export async function checkAdminStatus() {
-    return new Promise((resolve) => {
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                const userDoc = await getDoc(doc(db, "users", user.uid));
-                resolve(userDoc.exists() && userDoc.data().role === 'admin');
-            } else { resolve(false); }
-        });
-    });
-}
-
-// ניהול התנתקות
-window.logout = () => signOut(auth).then(() => window.location.href = 'index.html');
-
-// הצגת שם המשתמש ב-Header
-onAuthStateChanged(auth, (user) => {
+// --- מנגנון אבטחה: אישור ונעילה ---
+onAuthStateChanged(auth, async (user) => {
     if (user) {
-        const nameEl = document.getElementById('navUserName');
-        if (nameEl) nameEl.innerText = user.email.split('@')[0].toUpperCase();
+        const userRef = doc(db, "users", user.uid);
+        const userDoc = await getDoc(userRef);
+
+        if (userDoc.exists()) {
+            const userData = userDoc.data();
+            
+            // 1. בדיקה אם המשתמש ננעל
+            if (userData.status === "locked") {
+                alert("גישה נדחתה: המשתמש שלך ננעל על ידי אדמין.");
+                signOut(auth);
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            // 2. בדיקה אם המשתמש מאושר
+            if (userData.approved !== true) {
+                alert("החשבון ממתין לאישור מנהל המערכת.");
+                signOut(auth);
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            // הצגת שם המשתמש ב-Header אם הכל תקין
+            const nameEl = document.getElementById('navUserName');
+            if (nameEl) nameEl.innerText = userData.name || user.displayName;
+
+        } else {
+            // יצירת רשומה חדשה למשתמש שטרם נרשם (ממתין לאישור)
+            await setDoc(userRef, {
+                email: user.email,
+                name: user.displayName || "משתמש חדש",
+                role: "user",
+                approved: false, // חייב אישור אדמין
+                status: "active",
+                createdAt: serverTimestamp()
+            });
+            alert("נרשמת בהצלחה! פנה למנהל המערכת כדי שיאשר את כניסתך.");
+            signOut(auth);
+            window.location.href = 'index.html';
+        }
     }
 });
+
+// --- פונקציות התחברות ---
+window.loginWithGoogle = async () => {
+    try {
+        await signInWithPopup(auth, googleProvider);
+        // הניתוב יתבצע אוטומטית על ידי onAuthStateChanged
+    } catch (e) {
+        alert("שגיאה בהתחברות גוגל: " + e.message);
+    }
+};
+
+window.resetPassword = async () => {
+    const email = document.getElementById('loginEmail')?.value;
+    if (!email) return alert("אנא הזן אימייל לשחזור");
+    try {
+        await sendPasswordResetEmail(auth, email);
+        alert("נשלח אימייל לאיפוס סיסמה.");
+    } catch (e) { alert(e.message); }
+};
+
+// --- פונקציות ניהול (עבור users.html) ---
+window.approveUser = async (uid) => {
+    await updateDoc(doc(db, "users", uid), { approved: true });
+    alert("המשתמש אושר!");
+    location.reload();
+};
+
+window.toggleLock = async (uid, currentStatus) => {
+    const newStatus = currentStatus === "active" ? "locked" : "active";
+    await updateDoc(doc(db, "users", uid), { status: newStatus });
+    alert("סטטוס עודכן!");
+    location.reload();
+};
+
+window.logout = () => signOut(auth).then(() => window.location.href = 'index.html');
+
+export { auth, db };
