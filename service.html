@@ -1,180 +1,24 @@
-<!DOCTYPE html>
-<html lang="he" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700;800&display=swap" rel="stylesheet">
-    <title>מרכז שירות ותקלות - DreamCRM</title>
-    <style>
-        body { font-family: 'Assistant', sans-serif; background: #f1f5f9; }
-        .ticket-card { transition: all 0.3s ease; border-right: 6px solid #e2e8f0; }
-        .ticket-card:hover { transform: translateY(-3px); shadow-lg; }
-        .status-open { border-right-color: #ef4444; } /* דחוף/פתוח */
-        .status-process { border-right-color: #3b82f6; } /* בטיפול */
-        .status-closed { border-right-color: #10b981; } /* סגור */
-    </style>
-</head>
-<body class="flex h-screen overflow-hidden">
+<input type="text" id="t_cust" placeholder="שם הלקוח" class="w-full p-4 bg-slate-100 rounded-xl mb-4">
+<textarea id="t_desc" placeholder="תיאור התקלה" class="w-full p-4 bg-slate-100 rounded-xl mb-4"></textarea>
 
-    <aside class="w-72 bg-slate-950 text-white p-8 flex flex-col shrink-0 shadow-2xl">
-        <div class="flex items-center gap-3 mb-12">
-            <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-xl shadow-lg">🛠️</div>
-            <h1 class="text-2xl font-black italic">DreamCRM</h1>
-        </div>
-        <nav class="flex-1 space-y-2">
-            <a href="dashboard.html" class="flex items-center gap-3 p-4 rounded-2xl opacity-60 hover:opacity-100">📊 דאשבורד</a>
-            <a href="customers.html" class="flex items-center gap-3 p-4 rounded-2xl opacity-60 hover:opacity-100">👥 לקוחות VIP</a>
-            <a href="service.html" class="flex items-center gap-3 p-4 rounded-2xl bg-blue-600 font-bold shadow-xl shadow-blue-500/20">🛠️ קריאות שירות</a>
-            <a href="users.html" class="flex items-center gap-3 p-4 rounded-2xl opacity-60 hover:opacity-100">🔐 ניהול צוות</a>
-        </nav>
-        <button onclick="logout()" class="p-4 text-red-400 font-bold mt-auto text-right hover:bg-red-400/10 rounded-xl">🚪 התנתקות</button>
-    </aside>
+<button onclick="saveTicket()" class="bg-blue-600 text-white p-4 rounded-xl w-full font-bold">פתח קריאה בשרת</button>
 
-    <div class="flex-1 flex flex-col min-w-0">
-        <header class="h-32 bg-white border-b px-10 flex items-center gap-4 shrink-0 shadow-sm">
-            <div class="flex-1 bg-slate-100 p-2 rounded-2xl border flex items-center">
-                <input type="text" id="filterGeneral" oninput="applyFilters()" placeholder="חיפוש לפי שם לקוח או ID..." class="bg-transparent p-3 outline-none flex-1 font-bold">
-            </div>
-            
-            <select id="filterDept" onchange="applyFilters()" class="bg-slate-100 p-4 rounded-2xl border-none font-bold text-slate-600 outline-none w-44">
-                <option value="">כל המחלקות</option>
-                <option value="tech">טכני</option>
-                <option value="finance">כספים</option>
-                <option value="sales">מכירות</option>
-            </select>
+<script type="module">
+    import { db } from './app.js';
+    import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-            <select id="filterAgent" onchange="applyFilters()" class="bg-slate-100 p-4 rounded-2xl border-none font-bold text-slate-600 outline-none w-44">
-                <option value="">כל העובדים</option>
-                <option value="APII">APII (Admin)</option>
-                <option value="staff1">יוסי כהן</option>
-            </select>
+    window.saveTicket = async () => {
+        const cust = document.getElementById('t_cust').value;
+        const desc = document.getElementById('t_desc').value;
+        if(!cust || !desc) return alert("מלא את כל השדות");
 
-            <button onclick="openNewTicketModal()" class="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black shadow-lg hover:bg-blue-600 transition-all">+ קריאה חדשה</button>
-        </header>
-
-        <main class="flex-1 overflow-y-auto p-10 bg-slate-50/50">
-            <div class="max-w-7xl mx-auto space-y-4">
-                
-                <div class="grid grid-cols-6 gap-4 px-8 text-[11px] font-black text-slate-400 uppercase tracking-widest">
-                    <span>קריאה (ID)</span>
-                    <span>לקוח / נושא</span>
-                    <span>שיוך (מחלקה/עובד)</span>
-                    <span>תאריך ושעה</span>
-                    <span>סטטוס</span>
-                    <span>פעולה</span>
-                </div>
-
-                <div id="serviceList" class="space-y-3">
-                    <div class="ticket-card status-open bg-white p-6 rounded-2xl shadow-sm flex items-center grid grid-cols-6 gap-4">
-                        <div class="font-black text-blue-600">#SR-1025</div>
-                        <div>
-                            <div class="font-bold text-slate-800">ישראל ישראלי</div>
-                            <div class="text-xs text-slate-400">תקלה בהתחברות למערכת</div>
-                        </div>
-                        <div>
-                            <div class="text-sm font-bold text-slate-700">מחלקה: טכני</div>
-                            <div class="text-xs text-slate-500">עובד: APII</div>
-                        </div>
-                        <div>
-                            <div class="font-bold text-slate-700">22/02/2026</div>
-                            <div class="text-xs text-slate-400">14:30:15</div>
-                        </div>
-                        <div>
-                            <span class="bg-red-100 text-red-600 px-3 py-1 rounded-lg text-[10px] font-black">דחוף - פתוח</span>
-                        </div>
-                        <div>
-                            <button onclick="editTicket('SR-1025')" class="bg-slate-100 p-2 px-4 rounded-xl font-bold text-xs hover:bg-slate-900 hover:text-white transition-all">עריכה וטיפול</button>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </main>
-    </div>
-
-    <div id="ticketModal" class="hidden fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-        <div class="bg-white w-full max-w-5xl rounded-[3rem] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
-            <div class="p-8 bg-blue-600 text-white flex justify-between items-center">
-                <div>
-                    <h3 class="text-3xl font-black" id="modalTicketID">קריאת שירות חדשה</h3>
-                    <p class="text-blue-100 text-sm">ניהול מעקב תקלה ושינוי הערות</p>
-                </div>
-                <button onclick="closeModal()" class="text-2xl opacity-50 hover:opacity-100">✕</button>
-            </div>
-
-            <div class="flex-1 overflow-y-auto p-10 grid grid-cols-2 gap-8">
-                <div class="space-y-4">
-                    <label class="block text-xs font-black text-slate-400">שם הלקוח</label>
-                    <input type="text" id="t_cust" class="w-full p-4 bg-slate-100 rounded-xl font-bold border-none">
-                    
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-black text-slate-400">שיוך למחלקה</label>
-                            <select id="t_dept" class="w-full p-4 bg-slate-100 rounded-xl font-bold border-none">
-                                <option value="tech">טכני</option>
-                                <option value="finance">כספים</option>
-                                <option value="sales">מכירות</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-black text-slate-400">שיוך לעובד</label>
-                            <select id="t_agent" class="w-full p-4 bg-slate-100 rounded-xl font-bold border-none">
-                                <option value="APII">APII</option>
-                                <option value="staff1">יוסי כהן</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <label class="block text-xs font-black text-slate-400">תיאור התקלה</label>
-                    <textarea id="t_desc" class="w-full p-4 bg-slate-100 rounded-xl font-bold border-none h-32"></textarea>
-                </div>
-
-                <div class="space-y-4 bg-slate-50 p-6 rounded-3xl">
-                    <h4 class="font-black text-slate-800 border-b pb-2">הערות טיפול ועדכונים</h4>
-                    <div id="ticketNotes" class="h-48 overflow-y-auto text-sm space-y-2 mb-4">
-                        <div class="bg-white p-3 rounded-lg shadow-sm border-r-4 border-blue-400">
-                            <p class="font-bold">APII: הלקוח עודכן שהתקלה בטיפול.</p>
-                            <span class="text-[10px] text-slate-400">22/02/2026 | 14:45</span>
-                        </div>
-                    </div>
-                    
-                    <label class="block text-xs font-black text-slate-400">הוסף הערה חדשה</label>
-                    <input type="text" id="new_note" class="w-full p-4 bg-white rounded-xl border-none shadow-sm font-bold">
-                    
-                    <label class="block text-xs font-black text-slate-400">עדכון סטטוס</label>
-                    <select id="t_status" class="w-full p-4 bg-slate-900 text-white rounded-xl font-bold">
-                        <option value="open">פתוח - דחוף</option>
-                        <option value="process">בטיפול פעיל</option>
-                        <option value="waiting">ממתין למענה לקוח</option>
-                        <option value="closed">סגור - טופל</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="p-8 bg-slate-50 border-t flex justify-end gap-4">
-                <button onclick="closeModal()" class="px-8 py-4 font-bold text-slate-400">ביטול</button>
-                <button onclick="saveTicket()" class="px-12 py-4 bg-slate-900 text-white rounded-2xl font-black shadow-xl">עדכן קריאה ושלח התראה</button>
-            </div>
-        </div>
-    </div>
-
-    <script type="module" src="app.js"></script>
-    <script>
-        function openNewTicketModal() {
-            document.getElementById('modalTicketID').innerText = "פתיחת קריאה חדשה";
-            document.getElementById('ticketModal').classList.remove('hidden');
-        }
-        function closeModal() { document.getElementById('ticketModal').classList.add('hidden'); }
-        
-        function applyFilters() {
-            console.log("מסנן לפי מחלקה, עובד ושם לקוח...");
-            // כאן יבוצע פילטור ב-Firestore/DOM
-        }
-
-        window.editTicket = (id) => {
-            document.getElementById('modalTicketID').innerText = "עריכת קריאה " + id;
-            document.getElementById('ticketModal').classList.remove('hidden');
-        }
-    </script>
-</body>
-</html>
+        await addDoc(collection(db, "service_tickets"), {
+            customer: cust,
+            description: desc,
+            status: "חדש",
+            createdAt: serverTimestamp()
+        });
+        alert("נשמר בהצלחה!");
+        location.reload();
+    };
+</script>
