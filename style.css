@@ -1,50 +1,28 @@
-/* style.css - העיצוב האחיד והיוקרתי */
 :root {
     --primary: #2563eb;
     --dark: #0f172a;
-    --glass: rgba(255, 255, 255, 0.8);
+    --bg: #f8fafc;
 }
 
 body {
     font-family: 'Assistant', sans-serif;
-    background: #f1f5f9;
-    display: flex;
+    background-color: var(--bg);
     margin: 0;
+    direction: rtl;
 }
 
-/* Sidebar אחיד */
-.sidebar {
-    width: 280px;
-    background: var(--dark);
-    color: white;
-    height: 100vh;
-    padding: 2rem;
-    position: sticky;
-    top: 0;
+.sidebar-active { background: var(--primary) !important; font-weight: 800; box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.4); }
+
+.glass-header {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(0,0,0,0.05);
 }
 
-/* כרטיסי פרימיום */
-.card-vip {
-    background: var(--glass);
-    backdrop-filter: blur(10px);
-    border-radius: 2rem;
-    padding: 2rem;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-    border: 1px solid rgba(255,255,255,0.3);
-    transition: transform 0.3s ease;
+.input-hub {
+    @apply bg-slate-100 border-none rounded-xl p-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all;
 }
 
-.card-vip:hover {
-    transform: translateY(-5px);
-}
-
-/* כפתורים */
-.btn-main {
-    background: var(--primary);
-    color: white;
-    padding: 1rem 2rem;
-    border-radius: 1rem;
-    font-weight: 800;
-    text-align: center;
-    cursor: pointer;
-}
+/* עיצוב גלילה יפה */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
