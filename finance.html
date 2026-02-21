@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700;800&display=swap" rel="stylesheet">
+    <title>ניהול כספים (Admin Only) - DreamCRM</title>
+    <style>
+        body { font-family: 'Assistant', sans-serif; background: #f8fafc; }
+        .income-row { border-right: 5px solid #10b981; }
+        .expense-row { border-right: 5px solid #ef4444; }
+        /* הסתרת התוכן עד לבדיקת הרשאה */
+        #adminContent { display: none; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <div id="adminContent" class="flex w-full">
+        <aside class="w-72 bg-slate-950 text-white p-8 flex flex-col shrink-0 shadow-2xl">
+            <div class="flex items-center gap-3 mb-12">
+                <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-xl shadow-lg">💰</div>
+                <h1 class="text-2xl font-black italic">DreamCRM</h1>
+            </div>
+            <nav class="flex-1 space-y-2">
+                <a href="dashboard.html" class="flex items-center gap-3 p-4 rounded-2xl opacity-60 hover:opacity-100">📊 דאשבורד</a>
+                <a href="customers.html" class="flex items-center gap-3 p-4 rounded-2xl opacity-60 hover:opacity-100">👥 לקוחות VIP</a>
+                <a href="finance.html" class="flex items-center gap-3 p-4 rounded-2xl bg-blue-600 font-bold shadow-xl shadow-blue-500/20">💰 ניהול כספים</a>
+                <a href="service.html" class="flex items-center gap-3 p-4 rounded-2xl opacity-60 hover:opacity-100">🛠️ מרכז שירות</a>
+                <a href="users.html" class="flex items-center gap-3 p-4 rounded-2xl opacity-60 hover:opacity-100">🔐 ניהול צוות</a>
+            </nav>
+            <button onclick="logout()" class="p-4 text-red-400 font-bold mt-auto text-right hover:bg-red-400/10 rounded-xl">🚪 התנתקות</button>
+        </aside>
+
+        <div class="flex-1 flex flex-col min-w-0">
+            <header class="h-28 bg-white border-b px-10 flex items-center justify-between">
+                <div class="flex items-center gap-4 bg-slate-100 p-2 rounded-2xl border w-1/2">
+                    <input type="text" placeholder="חיפוש תנועה פיננסית..." class="bg-transparent p-3 outline-none flex-1 font-bold">
+                </div>
+                <div class="flex items-center gap-4 border-r pr-8">
+                    <div class="text-left">
+                        <div class="text-lg font-black text-slate-800">APII</div>
+                        <div class="text-xs text-red-600 font-black uppercase">Admin Access</div>
+                    </div>
+                </div>
+            </header>
+
+            <main class="flex-1 overflow-y-auto p-10 bg-slate-50/50">
+                <div class="max-w-7xl mx-auto space-y-6">
+                    <div class="grid grid-cols-3 gap-6">
+                        <div class="bg-white p-8 rounded-[2rem] shadow-sm border border-green-100">
+                            <p class="text-slate-400 font-bold text-xs uppercase">הכנסות החודש</p>
+                            <h3 class="text-3xl font-black text-green-600">₪ 142,000</h3>
+                        </div>
+                        <div class="bg-white p-8 rounded-[2rem] shadow-sm border border-red-100">
+                            <p class="text-slate-400 font-bold text-xs uppercase">הוצאות החודש</p>
+                            <h3 class="text-3xl font-black text-red-600">₪ 45,200</h3>
+                        </div>
+                        <div class="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-900">
+                            <p class="text-slate-400 font-bold text-xs uppercase">יתרה בבנק</p>
+                            <h3 class="text-3xl font-black text-slate-900">₪ 96,800</h3>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center py-4">
+                        <div class="flex gap-2">
+                            <button class="bg-white border px-6 py-2 rounded-xl font-bold">הורד דוגמת אקסל</button>
+                            <button class="bg-white border px-6 py-2 rounded-xl font-bold">טען קובץ הכנסות</button>
+                        </div>
+                        <button onclick="document.getElementById('financeModal').classList.remove('hidden')" class="bg-slate-900 text-white px-8 py-3 rounded-xl font-black">+ הוסף תנועה</button>
+                    </div>
+
+                    <div class="bg-white rounded-[2.5rem] shadow-xl overflow-hidden">
+                        <table class="w-full text-right">
+                            <thead class="bg-slate-50 border-b">
+                                <tr class="text-slate-400 text-[10px] font-black uppercase tracking-widest">
+                                    <th class="p-6">תאריך</th>
+                                    <th class="p-6">תיאור</th>
+                                    <th class="p-6">סוג</th>
+                                    <th class="p-6">סכום</th>
+                                </tr>
+                            </thead>
+                            <tbody id="financeTable">
+                                <tr class="income-row border-b">
+                                    <td class="p-6 font-bold">22/02/2026</td>
+                                    <td class="p-6 font-black text-slate-800">מכירת רישיון - לקוח VIP</td>
+                                    <td class="p-6 text-green-600 font-bold">הכנסה</td>
+                                    <td class="p-6 font-black text-xl">₪ 5,000</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div id="financeModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
+        <div class="bg-white w-full max-w-xl rounded-[2rem] p-10">
+            <h3 class="text-2xl font-black mb-6">הזנת תנועה חדשה</h3>
+            <div class="space-y-4">
+                <select id="f_type" class="w-full p-4 bg-slate-100 rounded-xl font-bold border-none outline-none">
+                    <option value="income">הכנסה (+)</option>
+                    <option value="expense">הוצאה (-)</option>
+                </select>
+                <input type="text" id="f_desc" placeholder="תיאור" class="w-full p-4 bg-slate-100 rounded-xl font-bold border-none outline-none">
+                <input type="number" id="f_amount" placeholder="סכום" class="w-full p-4 bg-slate-100 rounded-xl font-bold border-none outline-none text-2xl text-blue-600">
+                <button onclick="saveTransaction()" class="w-full py-4 bg-slate-900 text-white rounded-xl font-black mt-4">שמור במערכת</button>
+                <button onclick="document.getElementById('financeModal').classList.add('hidden')" class="w-full text-slate-400 font-bold text-sm">ביטול</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { checkAdminStatus } from './app.js';
+        
+        // בדיקת אבטחה בטעינה
+        window.addEventListener('DOMContentLoaded', async () => {
+            const isAdmin = await checkAdminStatus();
+            if (isAdmin) {
+                document.getElementById('adminContent').style.display = 'flex';
+            } else {
+                alert('גישה נדחתה: דף זה מיועד למנהלים בלבד!');
+                window.location.href = 'dashboard.html';
+            }
+        });
+    </script>
+</body>
+</html>
