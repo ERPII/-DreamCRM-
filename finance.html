@@ -2,127 +2,333 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DreamCRM - Finance</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700;800&display=swap" rel="stylesheet">
-    <title>ניהול כספים (Admin Only) - DreamCRM</title>
     <style>
-        body { font-family: 'Assistant', sans-serif; background: #f8fafc; }
-        .income-row { border-right: 5px solid #10b981; }
-        .expense-row { border-right: 5px solid #ef4444; }
-        /* הסתרת התוכן עד לבדיקת הרשאה */
-        #adminContent { display: none; }
+        body { font-family: 'Assistant', sans-serif; background: #0f172a; color: white; overflow-x: hidden; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; color: #94a3b8; transition: all 0.2s; font-weight: 600; }
+        .sidebar-item:hover { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+        .sidebar-item.active { background: rgba(59, 130, 246, 0.1); color: #3b82f6; border-right: 4px solid #3b82f6; }
+        .input-dark { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 14px; outline: none; transition: 0.2s; width: 100%; color: #e2e8f0; }
+        .input-dark:focus { border-color: #3b82f6; background: rgba(255,255,255,0.07); }
+        .btn-action { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .btn-action:hover { transform: translateY(-2px); filter: brightness(1.1); }
     </style>
 </head>
-<body class="flex h-screen overflow-hidden">
+<body class="flex min-h-screen">
 
-    <div id="adminContent" class="flex w-full">
-        <aside class="w-72 bg-slate-950 text-white p-8 flex flex-col shrink-0 shadow-2xl">
-            <div class="flex items-center gap-3 mb-12">
-                <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-xl shadow-lg">💰</div>
-                <h1 class="text-2xl font-black italic">DreamCRM</h1>
-            </div>
-            <nav class="flex-1 space-y-2">
-                <a href="dashboard.html" class="flex items-center gap-3 p-4 rounded-2xl opacity-60 hover:opacity-100">📊 דאשבורד</a>
-                <a href="customers.html" class="flex items-center gap-3 p-4 rounded-2xl opacity-60 hover:opacity-100">👥 לקוחות VIP</a>
-                <a href="finance.html" class="flex items-center gap-3 p-4 rounded-2xl bg-blue-600 font-bold shadow-xl shadow-blue-500/20">💰 ניהול כספים</a>
-                <a href="service.html" class="flex items-center gap-3 p-4 rounded-2xl opacity-60 hover:opacity-100">🛠️ מרכז שירות</a>
-                <a href="users.html" class="flex items-center gap-3 p-4 rounded-2xl opacity-60 hover:opacity-100">🔐 ניהול צוות</a>
-            </nav>
-            <button onclick="logout()" class="p-4 text-red-400 font-bold mt-auto text-right hover:bg-red-400/10 rounded-xl">🚪 התנתקות</button>
-        </aside>
-
-        <div class="flex-1 flex flex-col min-w-0">
-            <header class="h-28 bg-white border-b px-10 flex items-center justify-between">
-                <div class="flex items-center gap-4 bg-slate-100 p-2 rounded-2xl border w-1/2">
-                    <input type="text" placeholder="חיפוש תנועה פיננסית..." class="bg-transparent p-3 outline-none flex-1 font-bold">
-                </div>
-                <div class="flex items-center gap-4 border-r pr-8">
-                    <div class="text-left">
-                        <div class="text-lg font-black text-slate-800">APII</div>
-                        <div class="text-xs text-red-600 font-black uppercase">Admin Access</div>
-                    </div>
-                </div>
-            </header>
-
-            <main class="flex-1 overflow-y-auto p-10 bg-slate-50/50">
-                <div class="max-w-7xl mx-auto space-y-6">
-                    <div class="grid grid-cols-3 gap-6">
-                        <div class="bg-white p-8 rounded-[2rem] shadow-sm border border-green-100">
-                            <p class="text-slate-400 font-bold text-xs uppercase">הכנסות החודש</p>
-                            <h3 class="text-3xl font-black text-green-600">₪ 142,000</h3>
-                        </div>
-                        <div class="bg-white p-8 rounded-[2rem] shadow-sm border border-red-100">
-                            <p class="text-slate-400 font-bold text-xs uppercase">הוצאות החודש</p>
-                            <h3 class="text-3xl font-black text-red-600">₪ 45,200</h3>
-                        </div>
-                        <div class="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-900">
-                            <p class="text-slate-400 font-bold text-xs uppercase">יתרה בבנק</p>
-                            <h3 class="text-3xl font-black text-slate-900">₪ 96,800</h3>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-between items-center py-4">
-                        <div class="flex gap-2">
-                            <button class="bg-white border px-6 py-2 rounded-xl font-bold">הורד דוגמת אקסל</button>
-                            <button class="bg-white border px-6 py-2 rounded-xl font-bold">טען קובץ הכנסות</button>
-                        </div>
-                        <button onclick="document.getElementById('financeModal').classList.remove('hidden')" class="bg-slate-900 text-white px-8 py-3 rounded-xl font-black">+ הוסף תנועה</button>
-                    </div>
-
-                    <div class="bg-white rounded-[2.5rem] shadow-xl overflow-hidden">
-                        <table class="w-full text-right">
-                            <thead class="bg-slate-50 border-b">
-                                <tr class="text-slate-400 text-[10px] font-black uppercase tracking-widest">
-                                    <th class="p-6">תאריך</th>
-                                    <th class="p-6">תיאור</th>
-                                    <th class="p-6">סוג</th>
-                                    <th class="p-6">סכום</th>
-                                </tr>
-                            </thead>
-                            <tbody id="financeTable">
-                                <tr class="income-row border-b">
-                                    <td class="p-6 font-bold">22/02/2026</td>
-                                    <td class="p-6 font-black text-slate-800">מכירת רישיון - לקוח VIP</td>
-                                    <td class="p-6 text-green-600 font-bold">הכנסה</td>
-                                    <td class="p-6 font-black text-xl">₪ 5,000</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </main>
+    <!-- Sidebar Navigation (Consistent across pages) -->
+    <aside class="w-72 glass border-l border-white/5 p-8 hidden lg:flex flex-col sticky top-0 h-screen">
+        <div class="mb-10">
+            <h1 class="text-2xl font-black italic tracking-tighter text-blue-500">DreamCRM</h1>
+            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Next-Gen Management</p>
         </div>
-    </div>
+        
+        <nav class="space-y-2 flex-grow">
+            <a href="dashboard.html" class="sidebar-item"><span>📊</span> דאשבורד</a>
+            <a href="customers.html" class="sidebar-item"><span>👥</span> לקוחות</a>
+            <a href="service.html" class="sidebar-item"><span>🛠️</span> שירות</a>
+            <a href="finance.html" class="sidebar-item active"><span>💰</span> כספים</a>
+            <a href="leads.html" class="sidebar-item"><span>🎯</span> לידים</a>
+            <a href="products.html" class="sidebar-item"><span>📦</span> מוצרים</a>
+            <a href="reports.html" class="sidebar-item"><span>📈</span> דוחות</a>
+            <a href="users.html" class="sidebar-item"><span>👤</span> משתמשים</a>
+        </nav>
 
-    <div id="financeModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
-        <div class="bg-white w-full max-w-xl rounded-[2rem] p-10">
-            <h3 class="text-2xl font-black mb-6">הזנת תנועה חדשה</h3>
-            <div class="space-y-4">
-                <select id="f_type" class="w-full p-4 bg-slate-100 rounded-xl font-bold border-none outline-none">
-                    <option value="income">הכנסה (+)</option>
-                    <option value="expense">הוצאה (-)</option>
-                </select>
-                <input type="text" id="f_desc" placeholder="תיאור" class="w-full p-4 bg-slate-100 rounded-xl font-bold border-none outline-none">
-                <input type="number" id="f_amount" placeholder="סכום" class="w-full p-4 bg-slate-100 rounded-xl font-bold border-none outline-none text-2xl text-blue-600">
-                <button onclick="saveTransaction()" class="w-full py-4 bg-slate-900 text-white rounded-xl font-black mt-4">שמור במערכת</button>
-                <button onclick="document.getElementById('financeModal').classList.add('hidden')" class="w-full text-slate-400 font-bold text-sm">ביטול</button>
+        <div class="mt-auto pt-6 border-t border-white/5">
+            <button class="sidebar-item text-red-400 w-full text-right"><span>🚪</span> התנתק</button>
+        </div>
+    </aside>
+
+    <main class="flex-grow p-6 lg:p-12">
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+            <div>
+                <h2 class="text-3xl font-black italic">ניהול <span class="text-green-500">פיננסי</span></h2>
+                <p class="text-slate-400 text-sm">מעקב חובות, זיכויים ותשלומים אוטומטיים</p>
             </div>
+            <div class="flex gap-3">
+                <button onclick="openFinanceModal('debit')" class="btn-action bg-red-600/20 text-red-400 border border-red-500/30 px-5 py-3 rounded-xl font-bold">
+                    - חיוב לקוח
+                </button>
+                <button onclick="openFinanceModal('credit')" class="btn-action bg-green-600/20 text-green-400 border border-green-500/30 px-5 py-3 rounded-xl font-bold">
+                    + זיכוי לקוח
+                </button>
+                <button onclick="openFinanceModal('subscription')" class="btn-action bg-blue-600 px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-900/30">
+                    🔄 הוראת קבע
+                </button>
+            </div>
+        </header>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+            <div class="glass p-6 rounded-2xl border-b-4 border-red-500">
+                <p class="text-slate-400 text-xs font-bold uppercase">סה"כ חובות פתוחים</p>
+                <h3 id="stat-total-debt" class="text-3xl font-black mt-1 text-red-400">₪0</h3>
+            </div>
+            <div class="glass p-6 rounded-2xl border-b-4 border-green-500">
+                <p class="text-slate-400 text-xs font-bold uppercase">יתרת זיכויים</p>
+                <h3 id="stat-total-credit" class="text-3xl font-black mt-1 text-green-400">₪0</h3>
+            </div>
+            <div class="glass p-6 rounded-2xl border-b-4 border-blue-500">
+                <p class="text-slate-400 text-xs font-bold uppercase">הכנסה חודשית צפויה</p>
+                <h3 id="stat-recurring" class="text-3xl font-black mt-1 text-blue-400">₪0</h3>
+            </div>
+            <div class="glass p-6 rounded-2xl border-b-4 border-slate-500">
+                <p class="text-slate-400 text-xs font-bold uppercase">לקוחות פעילים</p>
+                <h3 id="stat-active-cust" class="text-3xl font-black mt-1">0</h3>
+            </div>
+        </div>
+
+        <!-- Main Ledger Table -->
+        <div class="glass rounded-3xl overflow-hidden shadow-2xl">
+            <div class="p-6 border-b border-white/5 bg-white/5 flex justify-between items-center">
+                <h4 class="font-black italic">פירוט יתרות לקוחות</h4>
+                <input type="text" id="financeSearch" oninput="filterFinance()" placeholder="חפש לקוח..." class="input-dark max-w-xs py-2 text-sm">
+            </div>
+            <table class="w-full text-right">
+                <thead class="bg-white/5 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                    <tr>
+                        <th class="p-5">לקוח</th>
+                        <th class="p-5">סטטוס תשלום</th>
+                        <th class="p-5">חוב מצטבר</th>
+                        <th class="p-5">זיכוי זמין</th>
+                        <th class="p-5">הוראת קבע</th>
+                        <th class="p-5">פעולה</th>
+                    </tr>
+                </thead>
+                <tbody id="financeList">
+                    <!-- Data will be injected here -->
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- Finance Action Modal -->
+    <div id="financeModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="glass w-full max-w-xl rounded-[2.5rem] p-8 shadow-2xl border border-white/10">
+            <div class="flex justify-between items-center mb-8">
+                <h3 id="modalTitle" class="text-2xl font-black italic">פעולה כספית</h3>
+                <button onclick="closeModal()" class="text-xl opacity-40 hover:opacity-100">✕</button>
+            </div>
+
+            <form id="financeForm" class="space-y-5">
+                <input type="hidden" id="actionType">
+                
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">בחר לקוח</label>
+                    <select id="modalCustSelect" class="input-dark mt-2" required></select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">סכום (₪)</label>
+                        <input type="number" id="modalAmount" class="input-dark mt-2 font-mono text-lg" placeholder="0.00" required>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">תאריך ערך</label>
+                        <input type="date" id="modalDate" class="input-dark mt-2 text-sm">
+                    </div>
+                </div>
+
+                <div id="recurringOptions" class="hidden space-y-4 pt-4 border-t border-white/5">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" id="isRecurring" class="w-5 h-5 rounded border-white/10 bg-white/5 text-blue-600">
+                        <span class="text-sm font-bold">הפעל הוראת קבע חודשית</span>
+                    </label>
+                </div>
+
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">תיאור העסקה / סיבת זיכוי</label>
+                    <textarea id="modalDesc" class="input-dark mt-2 h-24" placeholder="הסבר קצר..."></textarea>
+                </div>
+
+                <div class="pt-6 flex gap-3">
+                    <button type="button" onclick="closeModal()" class="flex-grow py-4 font-bold opacity-50">ביטול</button>
+                    <button type="submit" id="submitBtn" class="flex-grow bg-blue-600 py-4 rounded-2xl font-black shadow-lg">בצע פעולה</button>
+                </div>
+            </form>
         </div>
     </div>
 
     <script type="module">
-        import { checkAdminStatus } from './app.js';
-        
-        // בדיקת אבטחה בטעינה
-        window.addEventListener('DOMContentLoaded', async () => {
-            const isAdmin = await checkAdminStatus();
-            if (isAdmin) {
-                document.getElementById('adminContent').style.display = 'flex';
-            } else {
-                alert('גישה נדחתה: דף זה מיועד למנהלים בלבד!');
-                window.location.href = 'dashboard.html';
-            }
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDV-ncOuncy-7HZZJnCMe4uis9ZV2QczYw",
+            authDomain: "dreamcrm-2d69d.firebaseapp.com",
+            projectId: "dreamcrm-2d69d",
+            storageBucket: "dreamcrm-2d69d.firebasestorage.app",
+            appId: "1:124987219085:web:87edf1c9024a82950ad6c4"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = 'dream-crm-ultimate';
+
+        let customers = [];
+        let financeData = []; // Combined ledger
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) await signInAnonymously(auth);
+
+            // Load Customers
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), (snap) => {
+                customers = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                updateCustSelect();
+                calculateBalances();
+            });
+
+            // Load Financial Transactions
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'transactions'), (snap) => {
+                financeData = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                calculateBalances();
+            });
         });
+
+        function updateCustSelect() {
+            const sel = document.getElementById('modalCustSelect');
+            sel.innerHTML = '<option value="">בחר לקוח מהרשימה...</option>';
+            customers.forEach(c => sel.innerHTML += `<option value="${c.id}">${c.name}</option>`);
+        }
+
+        function calculateBalances() {
+            const list = document.getElementById('financeList');
+            list.innerHTML = '';
+            
+            let totalDebt = 0;
+            let totalCredit = 0;
+            let totalRecurring = 0;
+
+            customers.forEach(cust => {
+                const custTransactions = financeData.filter(t => t.custId === cust.id);
+                
+                let balance = 0;
+                let hasSubscription = cust.hasAutoBilling || false;
+                let subscriptionAmount = cust.billingAmount || 0;
+
+                custTransactions.forEach(t => {
+                    if (t.type === 'debit') balance -= parseFloat(t.amount);
+                    if (t.type === 'credit') balance += parseFloat(t.amount);
+                });
+
+                const debt = balance < 0 ? Math.abs(balance) : 0;
+                const credit = balance > 0 ? balance : 0;
+
+                totalDebt += debt;
+                totalCredit += credit;
+                if(hasSubscription) totalRecurring += subscriptionAmount;
+
+                list.innerHTML += `
+                    <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
+                        <td class="p-5">
+                            <div class="font-black">${cust.name}</div>
+                            <div class="text-[10px] text-slate-500 uppercase tracking-tighter">${cust.phone || 'ללא טלפון'}</div>
+                        </td>
+                        <td class="p-5">
+                            <span class="px-3 py-1 rounded-full text-[10px] font-bold ${balance >= 0 ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}">
+                                ${balance >= 0 ? 'מאוזן / בזכות' : 'יתרת חוב'}
+                            </span>
+                        </td>
+                        <td class="p-5 font-mono font-bold text-red-400">${debt > 0 ? '₪' + debt.toLocaleString() : '-'}</td>
+                        <td class="p-5 font-mono font-bold text-green-400">${credit > 0 ? '₪' + credit.toLocaleString() : '-'}</td>
+                        <td class="p-5">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full ${hasSubscription ? 'bg-blue-500 shadow-[0_0_8px_#3b82f6]' : 'bg-white/10'}"></span>
+                                <span class="text-xs ${hasSubscription ? 'text-blue-400 font-bold' : 'text-slate-600'}">
+                                    ${hasSubscription ? '₪' + subscriptionAmount : 'לא פעיל'}
+                                </span>
+                            </div>
+                        </td>
+                        <td class="p-5">
+                            <button onclick="openFinanceModal('debit', '${cust.id}')" class="text-[10px] bg-white/5 hover:bg-white/10 px-3 py-1 rounded-lg transition-all">נהל</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('stat-total-debt').innerText = '₪' + totalDebt.toLocaleString();
+            document.getElementById('stat-total-credit').innerText = '₪' + totalCredit.toLocaleString();
+            document.getElementById('stat-recurring').innerText = '₪' + totalRecurring.toLocaleString();
+            document.getElementById('stat-active-cust').innerText = customers.length;
+        }
+
+        window.openFinanceModal = (type, custId = '') => {
+            const modal = document.getElementById('financeModal');
+            const title = document.getElementById('modalTitle');
+            const submitBtn = document.getElementById('submitBtn');
+            const recurringSection = document.getElementById('recurringOptions');
+            
+            document.getElementById('actionType').value = type;
+            document.getElementById('modalCustSelect').value = custId;
+            document.getElementById('modalDate').value = new Date().toISOString().split('T')[0];
+            
+            recurringSection.classList.add('hidden');
+
+            if (type === 'debit') {
+                title.innerText = "חיוב לקוח חדש";
+                submitBtn.className = "flex-grow bg-red-600 py-4 rounded-2xl font-black shadow-lg";
+                submitBtn.innerText = "בצע חיוב";
+            } else if (type === 'credit') {
+                title.innerText = "זיכוי לקוח";
+                submitBtn.className = "flex-grow bg-green-600 py-4 rounded-2xl font-black shadow-lg";
+                submitBtn.innerText = "בצע זיכוי";
+            } else if (type === 'subscription') {
+                title.innerText = "הגדרת הוראת קבע אוטומטית";
+                recurringSection.classList.remove('hidden');
+                submitBtn.className = "flex-grow bg-blue-600 py-4 rounded-2xl font-black shadow-lg";
+                submitBtn.innerText = "שמור הגדרות חיוב";
+            }
+
+            modal.classList.remove('hidden');
+        };
+
+        window.closeModal = () => document.getElementById('financeModal').classList.add('hidden');
+
+        document.getElementById('financeForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const type = document.getElementById('actionType').value;
+            const custId = document.getElementById('modalCustSelect').value;
+            const amount = parseFloat(document.getElementById('modalAmount').value);
+            const desc = document.getElementById('modalDesc').value;
+            const isRecurring = document.getElementById('isRecurring').checked;
+
+            if (type === 'subscription') {
+                // Update customer profile for auto-billing
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', custId), {
+                    hasAutoBilling: isRecurring,
+                    billingAmount: amount,
+                    updatedAt: serverTimestamp()
+                });
+            } else {
+                // Add one-time transaction
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'transactions'), {
+                    custId,
+                    type,
+                    amount,
+                    desc,
+                    date: document.getElementById('modalDate').value,
+                    createdAt: serverTimestamp()
+                });
+            }
+
+            closeModal();
+            document.getElementById('financeForm').reset();
+        };
+
+        window.filterFinance = () => {
+            const val = document.getElementById('financeSearch').value.toLowerCase();
+            const rows = document.querySelectorAll('#financeList tr');
+            rows.forEach(row => {
+                const name = row.querySelector('td:first-child').innerText.toLowerCase();
+                row.style.display = name.includes(val) ? '' : 'none';
+            });
+        };
     </script>
 </body>
 </html>
