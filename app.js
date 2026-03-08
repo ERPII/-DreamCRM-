@@ -8,7 +8,6 @@ import {
     getFirestore, doc, getDoc, setDoc, serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// ה-Config המדויק מהקובץ שלך
 const firebaseConfig = {
   apiKey: "AIzaSyDV-ncOuncy-7HZZJnCMe4uis9ZV2QczYw",
   authDomain: "dreamcrm-2d69d.firebaseapp.com",
@@ -25,11 +24,11 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
 
-// --- ניהול כניסה, רישום ואבטחה ---
-
+// לוגיקת אבטחה וכניסה
 onAuthStateChanged(auth, async (user) => {
-    const isLoginPage = window.location.pathname.includes('index.html') || window.location.pathname === '/';
-    
+    const isLoginPage = window.location.pathname.includes('index.html') || window.location.pathname === '/' || window.location.pathname.endsWith('DreamCRM/');
+    const statusEl = document.getElementById('statusMsg');
+
     if (user) {
         const userRef = doc(db, "users", user.uid);
         const userDoc = await getDoc(userRef);
@@ -37,47 +36,43 @@ onAuthStateChanged(auth, async (user) => {
         if (userDoc.exists()) {
             const userData = userDoc.data();
             
-            // בדיקת חסימה
             if (userData.status === "locked") {
-                showMsg("גישה נדחתה: החשבון שלך ננעל.");
+                if(statusEl) { statusEl.innerText = "החשבון ננעל על ידי מנהל."; statusEl.classList.remove('hidden'); }
                 signOut(auth);
                 return;
             }
             
-            // בדיקת אישור מנהל
             if (userData.approved !== true) {
-                showMsg("החשבון ממתין לאישור מנהל המערכת.");
-                signOut(auth);
+                if(statusEl) { statusEl.innerText = "החשבון ממתין לאישור מנהל המערכת."; statusEl.classList.remove('hidden'); }
+                // אנחנו לא עושים SignOut כאן כדי לאפשר לאדמין לראות את עצמו, 
+                // אבל בדפים פנימיים תהיה חסימה.
+                if (!isLoginPage) window.location.href = 'index.html';
                 return;
             }
 
-            // כניסה מאושרת - העברה לדאשבורד
             if (isLoginPage) window.location.href = 'dashboard.html';
         } else {
-            // יצירת משתמש חדש ב-Firestore (ממתין לאישור)
+            // יצירת משתמש חדש
             await setDoc(userRef, {
                 email: user.email,
                 name: user.displayName || "משתמש חדש",
                 role: "user",
-                approved: false, 
+                approved: false,
                 status: "active",
                 createdAt: serverTimestamp()
             });
-            showMsg("נרשמת בהצלחה! המתן לאישור אדמין.");
+            if(statusEl) { statusEl.innerText = "נרשמת! המתן לאישור מנהל."; statusEl.classList.remove('hidden'); }
             signOut(auth);
         }
     } else {
-        // אם לא מחובר ומנסה להיכנס לדפים פנימיים
         if (!isLoginPage) window.location.href = 'index.html';
     }
 });
 
-// פונקציית התחברות
+// הפונקציות שיופעלו מה-HTML
 window.loginEmail = async () => {
     const email = document.getElementById('loginEmail').value;
     const pass = document.getElementById('loginPass').value;
-    if (!email || !pass) return alert("נא למלא את כל השדות");
-
     try {
         await signInWithEmailAndPassword(auth, email, pass);
     } catch (e) {
@@ -85,37 +80,26 @@ window.loginEmail = async () => {
     }
 };
 
-// פונקציית רישום חשבון חדש
 window.registerEmail = async () => {
     const email = document.getElementById('loginEmail').value;
     const pass = document.getElementById('loginPass').value;
-    if (!email || pass.length < 6) return alert("הזן אימייל וסיסמה (לפחות 6 תווים)");
-
+    if (pass.length < 6) return alert("סיסמה חייבת להיות לפחות 6 תווים");
     try {
         await createUserWithEmailAndPassword(auth, email, pass);
+        alert("חשבון נוצר בהצלחה! המתן לאישור.");
     } catch (e) {
         alert("שגיאה ברישום: " + e.message);
     }
 };
 
-// התחברות גוגל
-window.loginWithGoogle = () => signInWithPopup(auth, googleProvider);
+window.loginWithGoogle = () => signInWithPopup(auth, googleProvider).catch(e => alert(e.message));
 
-// שחזור סיסמה
 window.resetPassword = () => {
     const email = document.getElementById('loginEmail').value;
     if (!email) return alert("הזן אימייל לשחזור");
-    sendPasswordResetEmail(auth, email).then(() => alert("אימייל לשחזור נשלח!"));
+    sendPasswordResetEmail(auth, email).then(() => alert("נשלח אימייל לאיפוס!"));
 };
 
-// פונקציית עזר להודעות
-function showMsg(text) {
-    const msgEl = document.getElementById('statusMsg');
-    if (msgEl) {
-        msgEl.innerText = text;
-        msgEl.classList.remove('hidden');
-    }
-}
+window.logout = () => signOut(auth);
 
-window.logout = () => signOut(auth).then(() => window.location.href = 'index.html');
 export { auth, db };
