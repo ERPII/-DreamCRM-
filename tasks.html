@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DreamCRM - ניהול משימות חכם</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Assistant', sans-serif; background: #0f172a; color: white; overflow-x: hidden; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; color: #94a3b8; transition: all 0.2s; font-weight: 600; }
+        .sidebar-item:hover { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+        .sidebar-item.active { background: rgba(59, 130, 246, 0.1); color: #3b82f6; border-right: 4px solid #3b82f6; }
+        .input-dark { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 12px; outline: none; transition: 0.2s; width: 100%; color: #e2e8f0; font-size: 14px; }
+        .input-dark:focus { border-color: #3b82f6; background: rgba(255,255,255,0.07); }
+        .task-card { cursor: pointer; transition: all 0.3s ease; border: 1px solid rgba(255,255,255,0.05); }
+        .task-card:hover { transform: translateY(-5px); border-color: rgba(59, 130, 246, 0.4); box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5); }
+        .badge { padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+        .loader { border-top-color: #3b82f6; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="flex min-h-screen">
+
+    <!-- Sidebar -->
+    <aside class="w-72 glass border-l border-white/5 p-8 hidden lg:flex flex-col sticky top-0 h-screen">
+        <div class="mb-10 text-center">
+            <h1 class="text-2xl font-black italic tracking-tighter text-blue-500">DreamCRM</h1>
+            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Enterprise Sync v2.5</p>
+        </div>
+        <nav class="space-y-2 flex-grow">
+            <a href="dashboard.html" class="sidebar-item"><span>📊</span> דאשבורד</a>
+            <a href="customers.html" class="sidebar-item"><span>👥</span> לקוחות</a>
+            <a href="tasks.html" class="sidebar-item active"><span>✅</span> משימות</a>
+            <a href="service.html" class="sidebar-item"><span>🛠️</span> שירות</a>
+            <a href="finance.html" class="sidebar-item"><span>💰</span> כספים</a>
+            <a href="leads.html" class="sidebar-item"><span>🎯</span> לידים</a>
+            <a href="products.html" class="sidebar-item"><span>📦</span> מוצרים</a>
+            <a href="reports.html" class="sidebar-item"><span>📈</span> דוחות</a>
+        </nav>
+    </aside>
+
+    <main class="flex-grow p-6 lg:p-12 bg-[#020617]">
+        <!-- Header -->
+        <header class="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-10 gap-6">
+            <div>
+                <h2 class="text-4xl font-black italic">ניהול <span class="text-blue-500">משימות</span></h2>
+                <p class="text-slate-400 text-sm mt-1">ניהול עבודה חכם, סנכרון צוות ולקוחות בזמן אמת</p>
+            </div>
+            <button onclick="openTaskModal()" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-xl shadow-blue-900/20 flex items-center gap-2">
+                <span class="text-xl">+</span> משימה חדשה
+            </button>
+        </header>
+
+        <!-- Search & Advanced Filters -->
+        <section class="glass p-6 rounded-[2rem] mb-10">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase px-2">חיפוש חופשי</label>
+                    <input type="text" id="searchTask" oninput="applyFilters()" placeholder="שם המשימה או תוכן..." class="input-dark mt-1">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase px-2">סינון לפי לקוח</label>
+                    <select id="filterCustomer" onchange="applyFilters()" class="input-dark mt-1">
+                        <option value="">כל הלקוחות</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase px-2">סינון לפי איש צוות</label>
+                    <select id="filterUser" onchange="applyFilters()" class="input-dark mt-1">
+                        <option value="">כל הצוות</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase px-2">דחיפות</label>
+                    <select id="filterPriority" onchange="applyFilters()" class="input-dark mt-1">
+                        <option value="">הכל</option>
+                        <option value="normal">רגיל</option>
+                        <option value="high">דחוף</option>
+                        <option value="critical">קריטי</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tasks Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" id="tasksContainer">
+            <!-- Tasks will be injected here -->
+        </div>
+    </main>
+
+    <!-- Task Modal -->
+    <div id="taskModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="glass w-full max-w-3xl p-10 rounded-[2.5rem] border border-white/10 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h3 id="modalTitle" class="text-2xl font-black italic text-blue-400">עריכת משימה</h3>
+                    <p id="taskIdDisplay" class="text-[10px] font-mono text-slate-500 mt-1 uppercase tracking-widest"></p>
+                </div>
+                <button onclick="closeModal()" class="text-slate-500 hover:text-white text-2xl">✕</button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="md:col-span-2">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase">כותרת המשימה</label>
+                    <input type="text" id="taskTitle" class="input-dark mt-1 py-3 text-lg font-bold" placeholder="מה המשימה?">
+                </div>
+
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase">שיוך ללקוח</label>
+                    <select id="taskCustomer" class="input-dark mt-1"></select>
+                </div>
+
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase">איש צוות אחראי</label>
+                    <select id="taskAssignee" class="input-dark mt-1"></select>
+                </div>
+
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase">תאריך יעד</label>
+                    <input type="date" id="taskDeadline" class="input-dark mt-1">
+                </div>
+
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase">צבע ויזואלי</label>
+                    <div class="flex gap-2 mt-2">
+                        <input type="color" id="taskColor" class="h-10 w-20 bg-transparent border-none cursor-pointer rounded-lg" value="#3b82f6">
+                        <span class="text-xs text-slate-500 flex items-center">צבע לזיהוי מהיר בלוח</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase">דחיפות המשימה</label>
+                    <select id="taskPriority" class="input-dark mt-1">
+                        <option value="normal">רגיל</option>
+                        <option value="high">דחוף</option>
+                        <option value="critical">קריטי 🔥</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase">סטטוס התקדמות</label>
+                    <select id="taskStatus" class="input-dark mt-1">
+                        <option value="open">פתוח</option>
+                        <option value="in_progress">בטיפול</option>
+                        <option value="waiting">ממתין למשוב</option>
+                        <option value="done">בוצע ✅</option>
+                    </select>
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase">לינקים וקבצים</label>
+                    <textarea id="taskFiles" class="input-dark mt-1 h-20 resize-none" placeholder="לינק למסמך, תיקיית Drive או הערות קובץ..."></textarea>
+                </div>
+            </div>
+
+            <div class="mt-10 flex flex-col md:flex-row gap-4">
+                <button id="saveBtn" onclick="saveTaskData()" class="flex-grow bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl font-bold transition-all shadow-xl flex justify-center items-center gap-2">
+                    <span id="saveText">שמור שינויים בענן</span>
+                    <div id="saveLoader" class="hidden w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                </button>
+                <button id="shareBtn" class="bg-white/5 border border-white/10 px-8 py-4 rounded-2xl font-bold hover:bg-white/10 transition-all flex items-center gap-2">
+                    🔗 <span>שתף לינק</span>
+                </button>
+                <button id="deleteBtn" class="bg-red-500/10 text-red-500 px-6 py-4 rounded-2xl font-bold hover:bg-red-500 hover:text-white transition-all">מחק</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, deleteDoc, doc, updateDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = JSON.parse('{"apiKey":"AIzaSyDV-ncOuncy-7HZZJnCMe4uis9ZV2QczYw","authDomain":"dreamcrm-2d69d.firebaseapp.com","projectId":"dreamcrm-2d69d","storageBucket":"dreamcrm-2d69d.firebasestorage.app","appId":"1:124987219085:web:87edf1c9024a82950ad6c4"}');
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = 'dream-crm-ultimate';
+
+        let currentEditingId = null;
+        let allTasks = [];
+        let customers = [];
+        let usersList = [];
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                await Promise.all([loadCustomers(), loadUsers()]);
+                loadTasks();
+            } else {
+                signInAnonymously(auth);
+            }
+        });
+
+        async function loadCustomers() {
+            const snap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'customers'));
+            customers = snap.docs.map(d => ({id: d.id, ...d.data()}));
+            const selectors = [document.getElementById('taskCustomer'), document.getElementById('filterCustomer')];
+            selectors.forEach(sel => {
+                sel.innerHTML = '<option value="">ללא לקוח / כל הלקוחות</option>';
+                customers.forEach(c => {
+                    sel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+                });
+            });
+        }
+
+        async function loadUsers() {
+            // טעינת משתמשים - בהנחה שקיימת קולקציה כזו
+            const snap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'users'));
+            usersList = snap.docs.map(d => ({id: d.id, ...d.data()}));
+            
+            // במידה והקולקציה ריקה (גרסת דמו), ניצור רשימה בסיסית
+            if(usersList.length === 0) usersList = [{id:'u1', name: 'ישראל ישראלי'}, {id:'u2', name: 'מנהל מערכת'}];
+
+            const selectors = [document.getElementById('taskAssignee'), document.getElementById('filterUser')];
+            selectors.forEach(sel => {
+                sel.innerHTML = '<option value="">בחר איש צוות / הכל</option>';
+                usersList.forEach(u => {
+                    sel.innerHTML += `<option value="${u.id}">${u.name}</option>`;
+                });
+            });
+        }
+
+        function loadTasks() {
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'tasks'), (snap) => {
+                allTasks = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                applyFilters();
+            });
+        }
+
+        window.applyFilters = () => {
+            const search = document.getElementById('searchTask').value.toLowerCase();
+            const customerId = document.getElementById('filterCustomer').value;
+            const userId = document.getElementById('filterUser').value;
+            const priority = document.getElementById('filterPriority').value;
+
+            const filtered = allTasks.filter(t => {
+                const matchSearch = t.title.toLowerCase().includes(search);
+                const matchCustomer = !customerId || t.customerId === customerId;
+                const matchUser = !userId || t.assigneeId === userId;
+                const matchPriority = !priority || t.priority === priority;
+                return matchSearch && matchCustomer && matchUser && matchPriority;
+            });
+
+            renderTasks(filtered);
+        };
+
+        function renderTasks(tasks) {
+            const container = document.getElementById('tasksContainer');
+            container.innerHTML = tasks.length ? tasks.map(t => {
+                const customer = customers.find(c => c.id === t.customerId);
+                const assignee = usersList.find(u => u.id === t.assigneeId);
+                const priorityLabel = t.priority === 'critical' ? 'קריטי 🔥' : (t.priority === 'high' ? 'דחוף' : 'רגיל');
+                
+                return `
+                    <div onclick="openTaskModal('${t.id}')" class="glass p-6 rounded-[2.2rem] task-card border-r-8" style="border-right-color: ${t.color || '#3b82f6'}">
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="text-[10px] font-mono text-slate-500 bg-white/5 px-2 py-1 rounded tracking-tighter">${t.taskNumber || 'T-XXX'}</span>
+                            <span class="badge ${t.status === 'done' ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'}">
+                                ${t.status === 'done' ? 'בוצע' : (t.status === 'in_progress' ? 'בטיפול' : 'פתוח')}
+                            </span>
+                        </div>
+                        <h4 class="text-xl font-black italic mb-2 leading-tight">${t.title}</h4>
+                        <div class="mt-6 space-y-3">
+                            <div class="flex items-center gap-3 text-xs text-slate-400">
+                                <span class="opacity-50 text-base">👤</span> 
+                                <span class="font-bold text-slate-200">${assignee ? assignee.name : 'לא הוקצה'}</span>
+                            </div>
+                            <div class="flex items-center gap-3 text-xs text-slate-400">
+                                <span class="opacity-50 text-base">🏢</span> 
+                                <span class="text-blue-400 font-bold">${customer ? customer.name : 'ללא לקוח'}</span>
+                            </div>
+                            <div class="flex items-center gap-3 text-xs text-slate-400">
+                                <span class="opacity-50 text-base">📅</span> 
+                                <span>${t.deadline || 'אין יעד'}</span>
+                            </div>
+                        </div>
+                        <div class="mt-6 pt-4 border-t border-white/5 flex justify-between items-center">
+                             <span class="text-[10px] font-bold text-slate-600 uppercase">עדיפות: ${priorityLabel}</span>
+                             <div class="flex -space-x-2">
+                                <div class="w-6 h-6 rounded-full bg-blue-500 border-2 border-[#0f172a] flex items-center justify-center text-[10px] font-bold">
+                                    ${assignee ? assignee.name[0] : '?'}
+                                </div>
+                             </div>
+                        </div>
+                    </div>
+                `;
+            }).join('') : `<div class="col-span-full py-20 text-center opacity-30 text-2xl font-bold">לא נמצאו משימות מתאימות</div>`;
+        }
+
+        window.openTaskModal = (id = null) => {
+            currentEditingId = id;
+            document.getElementById('taskModal').classList.remove('hidden');
+            const title = document.getElementById('modalTitle');
+            const delBtn = document.getElementById('deleteBtn');
+            const shareBtn = document.getElementById('shareBtn');
+            
+            if (id) {
+                const task = allTasks.find(t => t.id === id);
+                title.innerText = "עריכת משימה";
+                document.getElementById('taskTitle').value = task.title;
+                document.getElementById('taskCustomer').value = task.customerId || '';
+                document.getElementById('taskAssignee').value = task.assigneeId || '';
+                document.getElementById('taskDeadline').value = task.deadline || '';
+                document.getElementById('taskColor').value = task.color || '#3b82f6';
+                document.getElementById('taskPriority').value = task.priority || 'normal';
+                document.getElementById('taskStatus').value = task.status || 'open';
+                document.getElementById('taskFiles').value = task.files || '';
+                document.getElementById('taskIdDisplay').innerText = task.taskNumber || '';
+                delBtn.classList.remove('hidden');
+                delBtn.onclick = () => deleteTask(id);
+                shareBtn.onclick = () => copyShareLink(task.taskNumber);
+            } else {
+                title.innerText = "יצירת משימה חדשה";
+                document.querySelectorAll('.input-dark').forEach(i => i.value = '');
+                document.getElementById('taskColor').value = '#3b82f6';
+                document.getElementById('taskPriority').value = 'normal';
+                document.getElementById('taskStatus').value = 'open';
+                document.getElementById('taskIdDisplay').innerText = 'NEW_TASK';
+                delBtn.classList.add('hidden');
+            }
+        };
+
+        window.closeModal = () => document.getElementById('taskModal').classList.add('hidden');
+
+        window.saveTaskData = async () => {
+            const btn = document.getElementById('saveBtn');
+            const loader = document.getElementById('saveLoader');
+            const text = document.getElementById('saveText');
+
+            const data = {
+                title: document.getElementById('taskTitle').value,
+                customerId: document.getElementById('taskCustomer').value,
+                assigneeId: document.getElementById('taskAssignee').value,
+                deadline: document.getElementById('taskDeadline').value,
+                color: document.getElementById('taskColor').value,
+                priority: document.getElementById('taskPriority').value,
+                status: document.getElementById('taskStatus').value,
+                files: document.getElementById('taskFiles').value,
+                updatedAt: serverTimestamp()
+            };
+
+            if(!data.title) return alert("אנא הזן כותרת למשימה");
+
+            btn.disabled = true;
+            loader.classList.remove('hidden');
+            text.innerText = "שומר נתונים...";
+
+            try {
+                if (currentEditingId) {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', currentEditingId), data);
+                } else {
+                    const taskNumber = 'T-' + (Math.floor(Math.random() * 90000) + 10000);
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'tasks'), {
+                        ...data,
+                        taskNumber,
+                        createdAt: serverTimestamp()
+                    });
+                }
+                closeModal();
+            } catch (e) {
+                alert("שגיאה בשמירה, נסה שוב.");
+            } finally {
+                btn.disabled = false;
+                loader.classList.add('hidden');
+                text.innerText = "שמור שינויים בענן";
+            }
+        };
+
+        async function deleteTask(id) {
+            if(confirm("למחוק את המשימה לצמיתות? פעולה זו אינה הפיכה.")) {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', id));
+                closeModal();
+            }
+        }
+
+        function copyShareLink(taskNum) {
+            const url = window.location.href.split('?')[0] + '?task=' + taskNum;
+            const temp = document.createElement('input');
+            document.body.appendChild(temp);
+            temp.value = url;
+            temp.select();
+            document.execCommand('copy');
+            document.body.removeChild(temp);
+            
+            const btn = document.getElementById('shareBtn');
+            const original = btn.innerHTML;
+            btn.innerHTML = "✅ הועתק!";
+            setTimeout(() => btn.innerHTML = original, 2000);
+        }
+    </script>
+</body>
+</html>
