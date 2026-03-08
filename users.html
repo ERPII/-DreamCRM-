@@ -2,62 +2,408 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>ניהול משתמשים - DreamCRM</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DreamCRM - User Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Assistant', sans-serif; background: #0f172a; color: white; overflow-x: hidden; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; color: #94a3b8; transition: all 0.2s; font-weight: 600; }
+        .sidebar-item:hover { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+        .sidebar-item.active { background: rgba(59, 130, 246, 0.1); color: #3b82f6; border-right: 4px solid #3b82f6; }
+        .input-dark { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 12px; outline: none; transition: 0.2s; width: 100%; color: #e2e8f0; font-size: 14px; }
+        .input-dark:focus { border-color: #3b82f6; background: rgba(255,255,255,0.07); }
+        .user-card { transition: all 0.3s ease; border: 1px solid rgba(255,255,255,0.05); }
+        .user-card:hover { transform: translateY(-5px); border-color: rgba(59, 130, 246, 0.4); background: rgba(30, 41, 59, 0.9); }
+        .file-chip { background: rgba(59, 130, 246, 0.1); color: #60a5fa; padding: 4px 10px; border-radius: 8px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(59, 130, 246, 0.2); cursor: pointer; }
+        .loading-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); z-index: 100; display: flex; items-center; justify-center; }
+    </style>
 </head>
-<body class="bg-slate-100 p-10 font-sans">
-    <div class="max-w-5xl mx-auto">
-        <div class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl font-black text-slate-800">אבטחה וניהול צוות</h1>
-            <a href="dashboard.html" class="text-blue-600 font-bold">חזרה לדאשבורד</a>
+<body class="flex min-h-screen">
+
+    <div id="loader" class="loading-overlay">
+        <div class="text-xl font-bold animate-pulse text-blue-500 italic">טוען נתונים...</div>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <aside class="w-72 glass border-l border-white/5 p-8 hidden lg:flex flex-col sticky top-0 h-screen">
+        <div class="mb-10">
+            <h1 class="text-2xl font-black italic tracking-tighter text-blue-500">DreamCRM</h1>
+            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Next-Gen Management</p>
+        </div>
+        
+        <nav class="space-y-2 flex-grow">
+            <a href="dashboard.html" class="sidebar-item"><span>📊</span> דאשבורד</a>
+            <a href="customers.html" class="sidebar-item"><span>👥</span> לקוחות</a>
+            <a href="service.html" class="sidebar-item"><span>🛠️</span> שירות</a>
+            <a href="finance.html" class="sidebar-item"><span>💰</span> כספים</a>
+            <a href="leads.html" class="sidebar-item"><span>🎯</span> לידים</a>
+            <a href="products.html" class="sidebar-item"><span>📦</span> מוצרים</a>
+            <a href="reports.html" class="sidebar-item"><span>📈</span> דוחות</a>
+            <a href="users.html" class="sidebar-item active"><span>👤</span> משתמשים</a>
+        </nav>
+
+        <div class="mt-auto pt-6 border-t border-white/5">
+            <button class="sidebar-item text-red-400 w-full text-right"><span>🚪</span> התנתק</button>
+        </div>
+    </aside>
+
+    <main class="flex-grow p-6 lg:p-12">
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+            <div>
+                <h2 class="text-3xl font-black italic">ניהול <span class="text-blue-500">משתמשים וצוות</span></h2>
+                <p class="text-slate-400 text-sm">הגדרת הרשאות, תפקידים ומעקב ביצועים</p>
+            </div>
+            <button onclick="openUserModal()" class="bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-900/20">
+                + הוסף משתמש חדש
+            </button>
+        </header>
+
+        <!-- Stats Row -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+            <div class="glass p-6 rounded-2xl">
+                <p class="text-slate-400 text-xs font-bold uppercase tracking-widest">סה"כ עובדים</p>
+                <h3 id="stat-total-users" class="text-3xl font-black mt-1">0</h3>
+            </div>
+            <div class="glass p-6 rounded-2xl border-r-4 border-blue-500">
+                <p class="text-slate-400 text-xs font-bold uppercase tracking-widest">מנהלי מערכת</p>
+                <h3 id="stat-admins" class="text-3xl font-black mt-1">0</h3>
+            </div>
+            <div class="glass p-6 rounded-2xl border-r-4 border-green-500">
+                <p class="text-slate-400 text-xs font-bold uppercase tracking-widest">משימות שהושלמו</p>
+                <h3 id="stat-tasks-done" class="text-3xl font-black mt-1">0</h3>
+            </div>
+            <div class="glass p-6 rounded-2xl border-r-4 border-amber-500">
+                <p class="text-slate-400 text-xs font-bold uppercase tracking-widest">משימות פתוחות</p>
+                <h3 id="stat-tasks-open" class="text-3xl font-black mt-1">0</h3>
+            </div>
         </div>
 
-        <div class="bg-white rounded-3xl shadow-xl overflow-hidden">
-            <table class="w-full text-right">
-                <thead class="bg-slate-50 border-b">
-                    <tr>
-                        <th class="p-6">שם</th>
-                        <th class="p-6">אימייל</th>
-                        <th class="p-6">סטטוס</th>
-                        <th class="p-6">פעולות</th>
-                    </tr>
-                </thead>
-                <tbody id="usersList"></tbody>
-            </table>
+        <!-- Users Grid -->
+        <div id="usersGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <!-- User cards will appear here -->
+        </div>
+    </main>
+
+    <!-- User Modal -->
+    <div id="userModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="glass w-full max-w-4xl h-[90vh] rounded-[2.5rem] flex flex-col overflow-hidden border border-white/10">
+            <div class="p-6 border-b border-white/5 flex justify-between items-center bg-white/5">
+                <h3 id="modalTitle" class="text-xl font-black italic text-blue-400">עריכת כרטיס משתמש</h3>
+                <button onclick="closeModal()" class="text-xl opacity-50 hover:opacity-100">✕</button>
+            </div>
+
+            <div class="flex-grow overflow-y-auto p-8">
+                <form id="userForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <input type="hidden" id="modalUserId">
+                    
+                    <!-- Basic Info -->
+                    <div class="space-y-4">
+                        <h4 class="text-blue-400 font-bold text-xs uppercase tracking-widest mb-2">פרטים אישיים</h4>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase">שם מלא</label>
+                            <input type="text" id="userName" class="input-dark mt-1" required>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase">אימייל (שם משתמש)</label>
+                            <input type="email" id="userEmail" class="input-dark mt-1" required>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase">טלפון</label>
+                            <input type="text" id="userPhone" class="input-dark mt-1">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase">סיסמה למערכת</label>
+                            <input type="password" id="userPass" class="input-dark mt-1" placeholder="••••••••">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase">כתובת מגורים</label>
+                            <input type="text" id="userAddress" class="input-dark mt-1">
+                        </div>
+                    </div>
+
+                    <!-- Role & Dept -->
+                    <div class="space-y-4">
+                        <h4 class="text-blue-400 font-bold text-xs uppercase tracking-widest mb-2">תפקיד והרשאות</h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-500 uppercase">מחלקה</label>
+                                <select id="userDept" class="input-dark mt-1">
+                                    <option value="מכירות">מכירות</option>
+                                    <option value="שירות לקוחות">שירות לקוחות</option>
+                                    <option value="כספים">כספים</option>
+                                    <option value="טכני">טכני</option>
+                                    <option value="הנהלה">הנהלה</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-500 uppercase">תפקיד</label>
+                                <input type="text" id="userRole" class="input-dark mt-1" placeholder="למשל: נציג שירות בכיר">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase">סוג חשבון</label>
+                            <select id="userType" class="input-dark mt-1 border-blue-500/30">
+                                <option value="User">משתמש רגיל (User)</option>
+                                <option value="Admin">מנהל מערכת (Admin)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase">תאריך תחילת עבודה</label>
+                            <input type="date" id="userStartDate" class="input-dark mt-1">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase">הערות מנהל</label>
+                            <textarea id="userNotes" class="input-dark mt-1 h-20"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Files Section -->
+                    <div class="md:col-span-2 pt-6 border-t border-white/5">
+                        <h4 class="text-blue-400 font-bold text-xs uppercase tracking-widest mb-4">מסמכי עובד (חוזים, תעודות)</h4>
+                        <div class="flex flex-wrap gap-3 mb-4" id="userFileList">
+                            <!-- Files will appear here -->
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <label class="bg-white/5 border border-dashed border-white/20 px-6 py-4 rounded-2xl cursor-pointer hover:bg-white/10 transition-all flex-grow text-center">
+                                <span class="text-sm opacity-50">לחץ כאן להעלאת מסמך חדש</span>
+                                <input type="file" class="hidden" onchange="uploadUserFile(this)">
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="p-6 border-t border-white/5 flex justify-end gap-3 bg-white/5">
+                <button onclick="closeModal()" class="px-8 py-3 font-bold opacity-50">ביטול</button>
+                <button id="saveBtn" onclick="saveUser()" class="bg-blue-600 px-12 py-3 rounded-2xl font-black shadow-lg shadow-blue-900/40">שמור שינויים</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Box Custom UI -->
+    <div id="alertBox" class="fixed top-10 left-1/2 -translate-x-1/2 z-[100] hidden">
+        <div class="bg-blue-600 text-white px-8 py-4 rounded-2xl shadow-2xl font-bold flex items-center gap-3">
+            <span id="alertMessage">הפעולה בוצעה בהצלחה!</span>
+            <button onclick="document.getElementById('alertBox').classList.add('hidden')" class="opacity-50">✕</button>
         </div>
     </div>
 
     <script type="module">
-        import { db } from './app.js';
-        import { collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, serverTimestamp, deleteDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // פונקציות ניהול
-        window.approve = async (id) => {
-            await updateDoc(doc(db, "users", id), { approved: true });
-            location.reload();
-        };
-        window.toggleLock = async (id, status) => {
-            await updateDoc(doc(db, "users", id), { status: status === 'active' ? 'locked' : 'active' });
-            location.reload();
+        // Firebase Config
+        const firebaseConfig = JSON.parse('{"apiKey":"AIzaSyDV-ncOuncy-7HZZJnCMe4uis9ZV2QczYw","authDomain":"dreamcrm-2d69d.firebaseapp.com","projectId":"dreamcrm-2d69d","storageBucket":"dreamcrm-2d69d.firebasestorage.app","appId":"1:124987219085:web:87edf1c9024a82950ad6c4"}');
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'dream-crm-ultimate';
+
+        let users = [];
+        let tickets = [];
+        let currentUserId = null;
+        let tempFiles = [];
+
+        // UI Helpers
+        const showAlert = (msg) => {
+            const box = document.getElementById('alertBox');
+            document.getElementById('alertMessage').innerText = msg;
+            box.classList.remove('hidden');
+            setTimeout(() => box.classList.add('hidden'), 3000);
         };
 
-        const snap = await getDocs(collection(db, "users"));
-        const list = document.getElementById('usersList');
-        snap.forEach(d => {
-            const u = d.data();
-            list.innerHTML += `
-                <tr class="border-b">
-                    <td class="p-6 font-bold">${u.name}</td>
-                    <td class="p-6 text-slate-500">${u.email}</td>
-                    <td class="p-6">${u.approved ? '✅ מאושר' : '⏳ ממתין'}</td>
-                    <td class="p-6 flex gap-2">
-                        ${!u.approved ? `<button onclick="approve('${d.id}')" class="bg-green-500 text-white px-4 py-2 rounded-xl text-xs">אשר</button>` : ''}
-                        <button onclick="toggleLock('${d.id}', '${u.status}')" class="bg-slate-800 text-white px-4 py-2 rounded-xl text-xs">
-                            ${u.status === 'locked' ? 'שחרר נעילה' : 'נעל משתמש'}
-                        </button>
-                    </td>
-                </tr>`;
+        // Rule 3: Auth Before Queries
+        const initAuth = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                console.error("Auth Error", err);
+            }
+        };
+        initAuth();
+
+        onAuthStateChanged(auth, (user) => {
+            if (!user) return;
+            document.getElementById('loader').classList.add('hidden');
+
+            // Set up listeners - Rule 1: Correct Paths
+            const usersRef = collection(db, 'artifacts', appId, 'public', 'data', 'users');
+            onSnapshot(usersRef, (snap) => {
+                users = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                renderUsers();
+            }, (err) => console.error("Users load failed", err));
+
+            const ticketsRef = collection(db, 'artifacts', appId, 'public', 'data', 'tickets');
+            onSnapshot(ticketsRef, (snap) => {
+                tickets = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                renderUsers();
+            }, (err) => console.error("Tickets load failed", err));
         });
+
+        function renderUsers() {
+            const grid = document.getElementById('usersGrid');
+            grid.innerHTML = '';
+            
+            let totalAdmins = 0;
+            let totalDone = 0;
+            let totalOpen = 0;
+
+            users.forEach(u => {
+                if(u.userType === 'Admin') totalAdmins++;
+                
+                const userTasks = tickets.filter(t => t.assignedToId === u.id);
+                const done = userTasks.filter(t => t.status === 'סגור').length;
+                const open = userTasks.filter(t => t.status !== 'סגור').length;
+                
+                totalDone += done;
+                totalOpen += open;
+
+                grid.innerHTML += `
+                    <div class="glass p-6 rounded-[2rem] user-card cursor-pointer" onclick="openUserModal('${u.id}')">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="w-12 h-12 bg-blue-600/20 rounded-full flex items-center justify-center text-xl">
+                                ${u.userType === 'Admin' ? '👑' : '👤'}
+                            </div>
+                            <span class="text-[10px] font-black px-2 py-1 rounded-lg ${u.userType === 'Admin' ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-500/20 text-slate-400'} uppercase">
+                                ${u.userType}
+                            </span>
+                        </div>
+                        <h4 class="text-xl font-black">${u.name}</h4>
+                        <p class="text-slate-400 text-sm mb-4">${u.role || 'ללא תפקיד'} | ${u.dept || 'כללי'}</p>
+                        
+                        <div class="grid grid-cols-2 gap-3 pt-4 border-t border-white/5">
+                            <div class="text-center bg-white/5 p-3 rounded-xl">
+                                <div class="text-[10px] font-bold text-slate-500">בוצעו</div>
+                                <div class="text-lg font-black text-green-400">${done}</div>
+                            </div>
+                            <div class="text-center bg-white/5 p-3 rounded-xl">
+                                <div class="text-[10px] font-bold text-slate-500">בטיפול</div>
+                                <div class="text-lg font-black text-amber-400">${open}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('stat-total-users').innerText = users.length;
+            document.getElementById('stat-admins').innerText = totalAdmins;
+            document.getElementById('stat-tasks-done').innerText = totalDone;
+            document.getElementById('stat-tasks-open').innerText = totalOpen;
+        }
+
+        window.openUserModal = (id = null) => {
+            currentUserId = id;
+            document.getElementById('userForm').reset();
+            document.getElementById('userFileList').innerHTML = '';
+            tempFiles = [];
+
+            if (id) {
+                const u = users.find(x => x.id === id);
+                if (!u) return;
+                document.getElementById('modalTitle').innerText = `עריכת עובד: ${u.name}`;
+                document.getElementById('modalUserId').value = id;
+                document.getElementById('userName').value = u.name || '';
+                document.getElementById('userEmail').value = u.email || '';
+                document.getElementById('userPhone').value = u.phone || '';
+                document.getElementById('userDept').value = u.dept || 'מכירות';
+                document.getElementById('userRole').value = u.role || '';
+                document.getElementById('userType').value = u.userType || 'User';
+                document.getElementById('userAddress').value = u.address || '';
+                document.getElementById('userStartDate').value = u.startDate || '';
+                document.getElementById('userNotes').value = u.notes || '';
+                
+                tempFiles = u.files || [];
+                renderFiles();
+            } else {
+                document.getElementById('modalTitle').innerText = "הוספת עובד חדש";
+                document.getElementById('modalUserId').value = '';
+            }
+            document.getElementById('userModal').classList.remove('hidden');
+        };
+
+        window.uploadUserFile = (inp) => {
+            const file = inp.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                tempFiles.push({
+                    name: file.name,
+                    data: e.target.result,
+                    date: new Date().toLocaleDateString('he-IL')
+                });
+                renderFiles();
+            };
+            reader.readAsDataURL(file);
+        };
+
+        function renderFiles() {
+            const list = document.getElementById('userFileList');
+            list.innerHTML = '';
+            tempFiles.forEach((f, idx) => {
+                const div = document.createElement('div');
+                div.className = "file-chip";
+                div.innerHTML = `<span class="cursor-pointer">📎 ${f.name}</span> <button class="hover:text-red-400 mr-2">✕</button>`;
+                div.querySelector('span').onclick = () => window.downloadFile(f.data, f.name);
+                div.querySelector('button').onclick = () => { tempFiles.splice(idx, 1); renderFiles(); };
+                list.appendChild(div);
+            });
+        }
+
+        window.downloadFile = (data, name) => {
+            const a = document.createElement('a');
+            a.href = data; a.download = name; a.click();
+        };
+
+        window.saveUser = async () => {
+            const saveBtn = document.getElementById('saveBtn');
+            saveBtn.disabled = true;
+            saveBtn.innerText = "שומר...";
+
+            try {
+                const data = {
+                    name: document.getElementById('userName').value,
+                    email: document.getElementById('userEmail').value,
+                    phone: document.getElementById('userPhone').value,
+                    dept: document.getElementById('userDept').value,
+                    role: document.getElementById('userRole').value,
+                    userType: document.getElementById('userType').value,
+                    address: document.getElementById('userAddress').value,
+                    startDate: document.getElementById('userStartDate').value,
+                    notes: document.getElementById('userNotes').value,
+                    files: tempFiles,
+                    updatedAt: serverTimestamp()
+                };
+
+                const pass = document.getElementById('userPass').value;
+                if (pass) data.password = pass;
+
+                if (currentUserId) {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUserId), data);
+                    showAlert("המשתמש עודכן בהצלחה");
+                } else {
+                    data.createdAt = serverTimestamp();
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'users'), data);
+                    showAlert("משתמש חדש נוצר בהצלחה");
+                }
+                window.closeModal();
+            } catch (err) {
+                console.error("Save failed", err);
+                showAlert("שגיאה בשמירת הנתונים");
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerText = "שמור שינויים";
+            }
+        };
+
+        window.closeModal = () => document.getElementById('userModal').classList.add('hidden');
     </script>
 </body>
 </html>
