@@ -1,24 +1,349 @@
-<input type="text" id="t_cust" placeholder="שם הלקוח" class="w-full p-4 bg-slate-100 rounded-xl mb-4">
-<textarea id="t_desc" placeholder="תיאור התקלה" class="w-full p-4 bg-slate-100 rounded-xl mb-4"></textarea>
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DreamCRM - Service Tickets</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Assistant', sans-serif; background: #0f172a; color: white; overflow-x: hidden; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; color: #94a3b8; transition: all 0.2s; font-weight: 600; }
+        .sidebar-item:hover { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+        .sidebar-item.active { background: rgba(59, 130, 246, 0.1); color: #3b82f6; border-right: 4px solid #3b82f6; }
+        .input-dark { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 14px; outline: none; transition: 0.2s; width: 100%; color: #e2e8f0; }
+        .input-dark:focus { border-color: #3b82f6; background: rgba(255,255,255,0.07); }
+        .note-bubble { background: rgba(255,255,255,0.03); border-radius: 12px; padding: 12px; border-right: 3px solid #3b82f6; margin-bottom: 8px; }
+        .file-badge { background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 4px 8px; border-radius: 6px; font-size: 11px; display: inline-flex; align-items: center; gap: 6px; margin-top: 5px; cursor: pointer; }
+    </style>
+</head>
+<body class="flex min-h-screen">
 
-<button onclick="saveTicket()" class="bg-blue-600 text-white p-4 rounded-xl w-full font-bold">פתח קריאה בשרת</button>
+    <!-- Sidebar Navigation -->
+    <aside class="w-72 glass border-l border-white/5 p-8 hidden lg:flex flex-col sticky top-0 h-screen">
+        <div class="mb-10">
+            <h1 class="text-2xl font-black italic tracking-tighter text-blue-500">DreamCRM</h1>
+            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Next-Gen Management</p>
+        </div>
+        
+        <nav class="space-y-2 flex-grow">
+            <a href="dashboard.html" class="sidebar-item"><span>📊</span> דאשבורד</a>
+            <a href="customers.html" class="sidebar-item"><span>👥</span> לקוחות</a>
+            <a href="service.html" class="sidebar-item active"><span>🛠️</span> שירות</a>
+            <a href="finance.html" class="sidebar-item"><span>💰</span> כספים</a>
+            <a href="leads.html" class="sidebar-item"><span>🎯</span> לידים</a>
+            <a href="products.html" class="sidebar-item"><span>📦</span> מוצרים</a>
+            <a href="reports.html" class="sidebar-item"><span>📈</span> דוחות</a>
+            <a href="users.html" class="sidebar-item"><span>👤</span> משתמשים</a>
+        </nav>
 
-<script type="module">
-    import { db } from './app.js';
-    import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        <div class="mt-auto pt-6 border-t border-white/5">
+            <button onclick="logout()" class="sidebar-item text-red-400 w-full text-right"><span>🚪</span> התנתק</button>
+        </div>
+    </aside>
 
-    window.saveTicket = async () => {
-        const cust = document.getElementById('t_cust').value;
-        const desc = document.getElementById('t_desc').value;
-        if(!cust || !desc) return alert("מלא את כל השדות");
+    <main class="flex-grow p-6 lg:p-12">
+        <header class="flex justify-between items-center mb-10">
+            <div>
+                <h2 class="text-3xl font-black italic">ניהול <span class="text-blue-500">קריאות שירות</span></h2>
+                <p class="text-slate-400 text-sm">העלאת קבצים ושיוך לעובדים מתוך המערכת</p>
+            </div>
+            <button onclick="window.openTicketModal(null)" class="bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-900/20">
+                + פתח קריאה חדשה
+            </button>
+        </header>
 
-        await addDoc(collection(db, "service_tickets"), {
-            customer: cust,
-            description: desc,
-            status: "חדש",
-            createdAt: serverTimestamp()
+        <!-- Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <div class="glass p-6 rounded-2xl border-r-4 border-red-500">
+                <p class="text-slate-400 text-xs font-bold uppercase">ממתינות לטיפול</p>
+                <h3 id="stat-open" class="text-3xl font-black mt-1">0</h3>
+            </div>
+            <div class="glass p-6 rounded-2xl border-r-4 border-amber-500">
+                <p class="text-slate-400 text-xs font-bold uppercase">בטיפול פעיל</p>
+                <h3 id="stat-progress" class="text-3xl font-black mt-1">0</h3>
+            </div>
+            <div class="glass p-6 rounded-2xl border-r-4 border-green-500">
+                <p class="text-slate-400 text-xs font-bold uppercase">נסגרו החודש</p>
+                <h3 id="stat-closed" class="text-3xl font-black mt-1">0</h3>
+            </div>
+        </div>
+
+        <!-- Tickets Table -->
+        <div class="glass rounded-3xl overflow-hidden">
+            <table class="w-full text-right">
+                <thead class="bg-white/5 text-xs font-bold text-slate-400">
+                    <tr>
+                        <th class="p-5">מספר</th>
+                        <th class="p-5">לקוח</th>
+                        <th class="p-5">נושא</th>
+                        <th class="p-5">עובד מטפל</th>
+                        <th class="p-5">סטטוס</th>
+                        <th class="p-5">פעולה</th>
+                    </tr>
+                </thead>
+                <tbody id="ticketsList"></tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- Modal -->
+    <div id="ticketModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="glass w-full max-w-5xl h-[85vh] rounded-[2rem] flex flex-col overflow-hidden">
+            <div class="p-6 border-b border-white/5 flex justify-between items-center">
+                <h3 id="modalTitle" class="text-xl font-black">פרטי קריאה</h3>
+                <button onclick="window.closeModal()" class="text-xl opacity-50">✕</button>
+            </div>
+
+            <div class="flex-grow flex overflow-hidden">
+                <!-- Info Section -->
+                <div class="w-1/2 p-6 overflow-y-auto border-l border-white/5 space-y-4">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase">לקוח</label>
+                        <select id="fieldCust" class="input-dark mt-1"></select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase">עובד מטפל (מרשימת המשתמשים)</label>
+                        <select id="fieldUser" class="input-dark mt-1 text-blue-400"></select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase">נושא</label>
+                        <input type="text" id="fieldSubject" class="input-dark mt-1">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase">סטטוס</label>
+                            <select id="fieldStatus" class="input-dark mt-1">
+                                <option value="פתוח">פתוח</option>
+                                <option value="בטיפול">בטיפול</option>
+                                <option value="סגור">סגור</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase">דחיפות</label>
+                            <select id="fieldPriority" class="input-dark mt-1">
+                                <option value="רגיל">רגיל</option>
+                                <option value="דחוף">דחוף</option>
+                                <option value="קריטי">קריטי</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase">תיאור</label>
+                        <textarea id="fieldDesc" class="input-dark mt-1 h-32"></textarea>
+                    </div>
+                </div>
+
+                <!-- Timeline & Files -->
+                <div class="w-1/2 p-6 bg-black/10 flex flex-col">
+                    <h4 class="text-xs font-bold text-slate-500 uppercase mb-4 italic">עדכונים וקבצים</h4>
+                    <div id="notesList" class="flex-grow overflow-y-auto space-y-3 mb-4 pr-2"></div>
+                    
+                    <div class="bg-white/5 p-3 rounded-2xl border border-white/10 space-y-2">
+                        <div class="flex gap-2">
+                            <input type="text" id="noteText" class="bg-transparent flex-grow outline-none text-sm px-2" placeholder="כתוב עדכון...">
+                            <label class="cursor-pointer p-2 hover:bg-white/10 rounded-lg">
+                                📎 <input type="file" id="fileInp" class="hidden" onchange="handleFile(this)">
+                            </label>
+                            <button onclick="addNote()" class="bg-blue-600 px-4 py-2 rounded-xl text-xs font-bold">שלח</button>
+                        </div>
+                        <div id="fileInfo" class="text-[10px] text-blue-400 hidden">קובץ מוכן להעלאה: <span id="fileInfoName"></span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6 border-t border-white/5 flex justify-end gap-3">
+                <button onclick="window.closeModal()" class="px-6 py-2 opacity-50 font-bold">סגור</button>
+                <button onclick="window.saveTicket()" class="bg-blue-600 px-10 py-2 rounded-xl font-black">שמור שינויים</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDV-ncOuncy-7HZZJnCMe4uis9ZV2QczYw",
+            authDomain: "dreamcrm-2d69d.firebaseapp.com",
+            projectId: "dreamcrm-2d69d",
+            storageBucket: "dreamcrm-2d69d.firebasestorage.app",
+            appId: "1:124987219085:web:87edf1c9024a82950ad6c4"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = 'dream-crm-ultimate';
+
+        let currentId = null;
+        let tickets = [];
+        let users = [];
+        let customers = [];
+        let tempFileData = null;
+        let tempFileName = null;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) await signInAnonymously(auth);
+
+            // משיכת משתמשי מערכת (העובדים שלך)
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'users'), (snap) => {
+                users = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                const sel = document.getElementById('fieldUser');
+                sel.innerHTML = '<option value="">בחר עובד לטיפול...</option>';
+                users.forEach(u => sel.innerHTML += `<option value="${u.id}">${u.name || u.email || 'משתמש'}</option>`);
+            });
+
+            // משיכת לקוחות
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), (snap) => {
+                customers = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                const sel = document.getElementById('fieldCust');
+                sel.innerHTML = '<option value="">בחר לקוח...</option>';
+                customers.forEach(c => sel.innerHTML += `<option value="${c.id}">${c.name}</option>`);
+            });
+
+            // משיכת קריאות שירות
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'tickets'), (snap) => {
+                tickets = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
+                renderTable();
+            });
         });
-        alert("נשמר בהצלחה!");
-        location.reload();
-    };
-</script>
+
+        function renderTable() {
+            const list = document.getElementById('ticketsList');
+            list.innerHTML = '';
+            let stats = { open: 0, progress: 0, closed: 0 };
+
+            tickets.forEach(t => {
+                if(t.status === 'פתוח') stats.open++;
+                if(t.status === 'בטיפול') stats.progress++;
+                if(t.status === 'סגור') stats.closed++;
+
+                list.innerHTML += `
+                    <tr class="border-b border-white/5 hover:bg-white/5 cursor-pointer" onclick="window.openTicketModal('${t.id}')">
+                        <td class="p-5 font-mono text-blue-400">#${t.ticketNum || '---'}</td>
+                        <td class="p-5 font-bold">${t.custName || 'כללי'}</td>
+                        <td class="p-5">${t.subject}</td>
+                        <td class="p-5 text-sm text-slate-400">${t.assignedToName || 'לא שויך'}</td>
+                        <td class="p-5">
+                            <span class="px-3 py-1 rounded-full text-[10px] font-bold ${t.status === 'פתוח' ? 'bg-red-500/20 text-red-400' : t.status === 'בטיפול' ? 'bg-amber-500/20 text-amber-400' : 'bg-green-500/20 text-green-400'}">
+                                ${t.status}
+                            </span>
+                        </td>
+                        <td class="p-5"><button class="text-xs bg-white/5 px-3 py-1 rounded-lg hover:bg-blue-600">ערוך</button></td>
+                    </tr>
+                `;
+            });
+            document.getElementById('stat-open').innerText = stats.open;
+            document.getElementById('stat-progress').innerText = stats.progress;
+            document.getElementById('stat-closed').innerText = stats.closed;
+        }
+
+        window.openTicketModal = (id) => {
+            currentId = id;
+            document.getElementById('notesList').innerHTML = '';
+            document.getElementById('fileInfo').classList.add('hidden');
+            tempFileData = null; tempFileName = null;
+
+            if (id) {
+                const t = tickets.find(x => x.id === id);
+                document.getElementById('modalTitle').innerText = `קריאה #${t.ticketNum}`;
+                document.getElementById('fieldCust').value = t.custId || "";
+                document.getElementById('fieldUser').value = t.assignedToId || "";
+                document.getElementById('fieldSubject').value = t.subject || "";
+                document.getElementById('fieldStatus').value = t.status || "פתוח";
+                document.getElementById('fieldPriority').value = t.priority || "רגיל";
+                document.getElementById('fieldDesc').value = t.desc || "";
+                (t.notes || []).forEach(n => appendNoteUI(n));
+            } else {
+                document.getElementById('modalTitle').innerText = "קריאה חדשה";
+                document.getElementById('fieldSubject').value = "";
+                document.getElementById('fieldDesc').value = "";
+            }
+            document.getElementById('ticketModal').classList.remove('hidden');
+        };
+
+        window.handleFile = (inp) => {
+            const file = inp.files[0];
+            if(!file) return;
+            tempFileName = file.name;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                tempFileData = e.target.result;
+                document.getElementById('fileInfoName').innerText = file.name;
+                document.getElementById('fileInfo').classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.addNote = () => {
+            const txt = document.getElementById('noteText').value;
+            if(!txt && !tempFileData) return;
+            const note = {
+                time: new Date().toLocaleString('he-IL'),
+                text: txt || "קובץ מצורף",
+                fileName: tempFileName,
+                fileData: tempFileData
+            };
+            appendNoteUI(note);
+            document.getElementById('noteText').value = '';
+            document.getElementById('fileInfo').classList.add('hidden');
+            tempFileData = null; tempFileName = null;
+        };
+
+        function appendNoteUI(n) {
+            const div = document.createElement('div');
+            div.className = "note-bubble";
+            div.innerHTML = `
+                <div class="text-[9px] opacity-40 font-bold">${n.time}</div>
+                <div class="text-sm mt-1">${n.text}</div>
+                ${n.fileName ? `<div class="file-badge" onclick="downloadFile('${n.fileData}', '${n.fileName}')">📎 ${n.fileName}</div>` : ''}
+            `;
+            document.getElementById('notesList').appendChild(div);
+            document.getElementById('notesList').scrollTop = 9999;
+        }
+
+        window.downloadFile = (data, name) => {
+            const a = document.createElement('a');
+            a.href = data; a.download = name; a.click();
+        };
+
+        window.saveTicket = async () => {
+            const custId = document.getElementById('fieldCust').value;
+            const userId = document.getElementById('fieldUser').value;
+            const cust = customers.find(c => c.id === custId);
+            const user = users.find(u => u.id === userId);
+
+            const notes = Array.from(document.querySelectorAll('.note-bubble')).map(el => ({
+                time: el.querySelector('div').innerText,
+                text: el.querySelectorAll('div')[1].innerText,
+                fileName: el.querySelector('.file-badge')?.innerText.replace('📎 ', '') || null,
+                fileData: el.querySelector('.file-badge') ? el.querySelector('.file-badge').getAttribute('onclick').match(/'(.*?)'/)[1] : null
+            }));
+
+            const data = {
+                custId, custName: cust ? cust.name : "כללי",
+                assignedToId: userId, assignedToName: user ? (user.name || user.email) : "לא שויך",
+                subject: document.getElementById('fieldSubject').value,
+                status: document.getElementById('fieldStatus').value,
+                priority: document.getElementById('fieldPriority').value,
+                desc: document.getElementById('fieldDesc').value,
+                notes, updatedAt: serverTimestamp()
+            };
+
+            if (currentId) {
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', currentId), data);
+            } else {
+                data.ticketNum = tickets.length > 0 ? (Math.max(...tickets.map(x => x.ticketNum || 1000)) + 1) : 1001;
+                data.createdAt = serverTimestamp();
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'tickets'), data);
+            }
+            window.closeModal();
+        };
+
+        window.closeModal = () => document.getElementById('ticketModal').classList.add('hidden');
+    </script>
+</body>
+</html>
