@@ -14,14 +14,19 @@
         .sidebar-item.active { background: rgba(59, 130, 246, 0.1); color: #3b82f6; border-right: 4px solid #3b82f6; }
         .input-dark { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 12px; outline: none; transition: 0.2s; width: 100%; color: #e2e8f0; }
         .input-dark:focus { border-color: #3b82f6; background: rgba(255,255,255,0.07); }
-        .loading-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); z-index: 100; display: flex; align-items: center; justify-content: center; }
-        .customer-row:hover { background: rgba(255,255,255,0.02); }
+        .loading-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .tab-btn { padding: 12px 20px; font-weight: bold; font-size: 14px; border-bottom: 2px solid transparent; color: #94a3b8; transition: 0.2s; white-space: nowrap; }
+        .tab-btn.active { color: #3b82f6; border-bottom-color: #3b82f6; background: rgba(59, 130, 246, 0.05); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body class="flex min-h-screen">
 
-    <div id="loader" class="loading-overlay">
-        <div class="text-xl font-bold animate-pulse text-blue-500 italic">טוען נתונים...</div>
+    <div id="loader" class="loading-overlay hidden">
+        <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <div class="text-xl font-bold animate-pulse text-blue-500 italic">שומר נתונים בענן...</div>
     </div>
 
     <!-- Sidebar Navigation -->
@@ -30,7 +35,6 @@
             <h1 class="text-2xl font-black italic tracking-tighter text-blue-500">DreamCRM</h1>
             <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Next-Gen Management</p>
         </div>
-        
         <nav class="space-y-2 flex-grow">
             <a href="dashboard.html" class="sidebar-item"><span>📊</span> דאשבורד</a>
             <a href="customers.html" class="sidebar-item active"><span>👥</span> לקוחות</a>
@@ -39,130 +43,168 @@
             <a href="leads.html" class="sidebar-item"><span>🎯</span> לידים</a>
             <a href="products.html" class="sidebar-item"><span>📦</span> מוצרים</a>
             <a href="reports.html" class="sidebar-item"><span>📈</span> דוחות</a>
-            <a href="users.html" class="sidebar-item"><span>👤</span> משתמשים</a>
         </nav>
-
-        <div class="mt-auto pt-6 border-t border-white/5">
-            <button onclick="logout()" class="sidebar-item text-red-400 w-full text-right"><span>🚪</span> התנתק</button>
-        </div>
     </aside>
 
-    <!-- Main Content -->
     <main class="flex-grow p-6 lg:p-12">
         <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
             <div>
                 <h2 class="text-3xl font-black italic">ניהול <span class="text-blue-500">לקוחות</span></h2>
-                <p class="text-slate-400 text-sm">מאגר לקוחות מלא, היסטוריית התקשרות וניהול כרטיסים</p>
+                <p class="text-slate-400 text-sm">כרטיס לקוח מאוחד - כספים, שירות וקבצים</p>
             </div>
             <button onclick="openCustomerModal()" class="bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-900/20">
                 + לקוח חדש
             </button>
         </header>
 
-        <!-- Filters & Search -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div class="md:col-span-2">
+            <div class="md:col-span-3">
                 <input type="text" id="searchInput" oninput="filterCustomers()" placeholder="חפש לפי שם, טלפון או אימייל..." class="input-dark py-3 px-5">
             </div>
-            <select id="filterType" onchange="filterCustomers()" class="input-dark">
-                <option value="all">כל סוגי הלקוחות</option>
-                <option value="פרטי">פרטי</option>
-                <option value="עסקי">עסקי</option>
-                <option value="VIP">VIP</option>
-            </select>
             <div class="flex items-center glass px-4 rounded-xl text-slate-400 text-sm">
-                <span>סה"כ מוצגים: </span>
-                <span id="customerCount" class="mr-2 font-bold text-white">0</span>
+                <span>לקוחות: </span><span id="customerCount" class="mr-2 font-bold text-white">0</span>
             </div>
         </div>
 
-        <!-- Customers Table -->
         <div class="glass rounded-[2rem] overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full text-right">
-                    <thead>
-                        <tr class="text-slate-500 text-[10px] font-bold uppercase tracking-widest border-b border-white/5 bg-white/5">
-                            <th class="p-6">שם לקוח</th>
-                            <th class="p-6">סוג</th>
-                            <th class="p-6">אימייל וטלפון</th>
-                            <th class="p-6">סטטוס</th>
-                            <th class="p-6">פעולות</th>
-                        </tr>
-                    </thead>
-                    <tbody id="customersTableBody">
-                        <!-- Rows injected by JS -->
-                    </tbody>
-                </table>
-            </div>
+            <table class="w-full text-right">
+                <thead>
+                    <tr class="text-slate-500 text-[10px] font-bold uppercase tracking-widest border-b border-white/5 bg-white/5">
+                        <th class="p-6">לקוח</th>
+                        <th class="p-6">אימייל / טלפון</th>
+                        <th class="p-6">יתרה</th>
+                        <th class="p-6">סטטוס</th>
+                        <th class="p-6">פעולות</th>
+                    </tr>
+                </thead>
+                <tbody id="customersTableBody"></tbody>
+            </table>
         </div>
     </main>
 
     <!-- Customer Modal -->
-    <div id="customerModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
-        <div class="glass w-full max-w-4xl h-[85vh] rounded-[2.5rem] flex flex-col overflow-hidden border border-white/10">
+    <div id="customerModal" class="fixed inset-0 bg-black/95 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="glass w-full max-w-6xl h-[92vh] rounded-[2.5rem] flex flex-col overflow-hidden border border-white/10 shadow-2xl">
+            
             <div class="p-6 border-b border-white/5 flex justify-between items-center bg-white/5">
-                <h3 id="modalTitle" class="text-xl font-black italic text-blue-400">פרטי לקוח</h3>
-                <button onclick="closeModal()" class="text-xl opacity-50 hover:opacity-100">✕</button>
+                <div class="flex items-center gap-4">
+                    <div id="modalAvatar" class="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-xl font-bold text-white">?</div>
+                    <div>
+                        <h3 id="modalTitle" class="text-2xl font-black italic text-blue-400">פרטי לקוח</h3>
+                        <p id="modalSubtitle" class="text-xs text-slate-500 uppercase font-bold tracking-widest">Customer ID: New</p>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="saveCustomer()" class="bg-blue-600 px-8 py-3 rounded-xl font-bold hover:bg-blue-500 transition-all flex items-center gap-2">
+                        <span>💾</span> שמור וחזור
+                    </button>
+                    <button onclick="closeModal()" class="bg-white/5 hover:bg-white/10 p-3 rounded-xl transition-all">✕</button>
+                </div>
             </div>
 
-            <div class="flex-grow overflow-y-auto p-8">
-                <form id="customerForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <input type="hidden" id="customerId">
-                    
-                    <div class="space-y-4">
-                        <h4 class="text-blue-400 font-bold text-xs uppercase tracking-widest mb-2">מידע בסיסי</h4>
-                        <div>
-                            <label class="text-[10px] font-bold text-slate-500 uppercase">שם מלא / חברה</label>
-                            <input type="text" id="custName" class="input-dark mt-1" required>
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-bold text-slate-500 uppercase">ח"פ / ת.ז</label>
-                            <input type="text" id="custTaxId" class="input-dark mt-1">
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-bold text-slate-500 uppercase">אימייל</label>
-                            <input type="email" id="custEmail" class="input-dark mt-1">
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-bold text-slate-500 uppercase">טלפון</label>
-                            <input type="text" id="custPhone" class="input-dark mt-1">
-                        </div>
-                    </div>
-
-                    <div class="space-y-4">
-                        <h4 class="text-blue-400 font-bold text-xs uppercase tracking-widest mb-2">סיווג וכתובת</h4>
-                        <div>
-                            <label class="text-[10px] font-bold text-slate-500 uppercase">סוג לקוח</label>
-                            <select id="custType" class="input-dark mt-1">
-                                <option value="פרטי">פרטי</option>
-                                <option value="עסקי">עסקי</option>
-                                <option value="VIP">VIP</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-bold text-slate-500 uppercase">כתובת</label>
-                            <input type="text" id="custAddress" class="input-dark mt-1">
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-bold text-slate-500 uppercase">סטטוס</label>
-                            <select id="custStatus" class="input-dark mt-1">
-                                <option value="פעיל">פעיל</option>
-                                <option value="לא פעיל">לא פעיל</option>
-                                <option value="בהקפאה">בהקפאה</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="md:col-span-2">
-                        <label class="text-[10px] font-bold text-slate-500 uppercase">הערות ומידע נוסף</label>
-                        <textarea id="custNotes" class="input-dark mt-1 h-32"></textarea>
-                    </div>
-                </form>
+            <div class="flex border-b border-white/5 bg-white/2 overflow-x-auto no-scrollbar">
+                <button class="tab-btn active" onclick="switchTab('general')">📋 כללי</button>
+                <button class="tab-btn" onclick="switchTab('finance')">💰 כספים (₪)</button>
+                <button class="tab-btn" onclick="switchTab('service')">🛠️ קריאות שירות</button>
+                <button class="tab-btn" onclick="switchTab('files')">📁 קבצים ותמונות</button>
             </div>
 
-            <div class="p-6 border-t border-white/5 flex justify-end gap-3 bg-white/5">
-                <button onclick="closeModal()" class="px-8 py-3 font-bold opacity-50">ביטול</button>
-                <button id="saveBtn" onclick="saveCustomer()" class="bg-blue-600 px-12 py-3 rounded-2xl font-black shadow-lg shadow-blue-900/40">שמור לקוח</button>
+            <div class="flex-grow overflow-y-auto p-8" id="modalBody">
+                
+                <!-- General Info -->
+                <div id="tab-general" class="tab-content active">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="space-y-4">
+                            <h4 class="text-blue-400 font-bold text-xs uppercase tracking-widest border-r-2 border-blue-500 pr-2">פרטי התקשרות</h4>
+                            <div><label class="text-[10px] font-bold text-slate-500 uppercase">שם מלא</label><input type="text" id="custName" class="input-dark mt-1"></div>
+                            <div><label class="text-[10px] font-bold text-slate-500 uppercase">אימייל</label><input type="email" id="custEmail" class="input-dark mt-1"></div>
+                            <div><label class="text-[10px] font-bold text-slate-500 uppercase">טלפון</label><input type="text" id="custPhone" class="input-dark mt-1"></div>
+                        </div>
+                        <div class="space-y-4">
+                            <h4 class="text-blue-400 font-bold text-xs uppercase tracking-widest border-r-2 border-blue-500 pr-2">מידע עסקי</h4>
+                            <div><label class="text-[10px] font-bold text-slate-500 uppercase">סוג</label><select id="custType" class="input-dark mt-1"><option>פרטי</option><option>עסקי</option><option>VIP</option></select></div>
+                            <div><label class="text-[10px] font-bold text-slate-500 uppercase">סטטוס</label><select id="custStatus" class="input-dark mt-1"><option>פעיל</option><option>מבוטל</option></select></div>
+                            <div><label class="text-[10px] font-bold text-slate-500 uppercase">כתובת</label><input type="text" id="custAddress" class="input-dark mt-1"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Finance Tab -->
+                <div id="tab-finance" class="tab-content">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div class="glass p-6 rounded-2xl border-r-4 border-green-500">
+                            <p class="text-xs text-slate-400 font-bold">יתרה נוכחית</p>
+                            <h5 id="financeBalance" class="text-3xl font-black mt-1 text-white">₪0.00</h5>
+                        </div>
+                        <div class="md:col-span-2 glass p-4 rounded-2xl">
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 items-end">
+                                <div class="col-span-1">
+                                    <label class="text-[10px] font-bold text-slate-500">סכום (₪)</label>
+                                    <input type="number" id="financeAmount" placeholder="0.00" class="input-dark mt-1">
+                                </div>
+                                <div class="col-span-1">
+                                    <label class="text-[10px] font-bold text-slate-500">מס' חשבונית</label>
+                                    <input type="text" id="financeInvoice" placeholder="INV-..." class="input-dark mt-1">
+                                </div>
+                                <div class="col-span-1">
+                                    <label class="text-[10px] font-bold text-slate-500">תיאור</label>
+                                    <input type="text" id="financeDesc" placeholder="מהות התשלום" class="input-dark mt-1">
+                                </div>
+                                <button onclick="addFinanceRecord()" class="bg-blue-600 hover:bg-blue-500 h-[42px] rounded-xl font-bold transition-all">בצע</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="glass rounded-xl overflow-hidden">
+                        <table class="w-full text-right text-sm">
+                            <thead class="bg-white/5 text-slate-500 font-bold uppercase text-[10px]">
+                                <tr>
+                                    <th class="p-4">תאריך</th>
+                                    <th class="p-4">מס' חשבונית</th>
+                                    <th class="p-4">תיאור</th>
+                                    <th class="p-4">סכום</th>
+                                </tr>
+                            </thead>
+                            <tbody id="financeTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Service Tickets Tab -->
+                <div id="tab-service" class="tab-content">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <!-- Quick Add Ticket -->
+                        <div class="lg:col-span-1 glass p-6 rounded-2xl h-fit sticky top-0">
+                            <h4 class="text-blue-400 font-bold text-xs uppercase tracking-widest mb-4">פתיחת קריאה חדשה</h4>
+                            <div class="space-y-4">
+                                <div><label class="text-[10px] font-bold text-slate-500">נושא הקריאה</label><input type="text" id="srvSubject" class="input-dark mt-1"></div>
+                                <div><label class="text-[10px] font-bold text-slate-500">דחיפות</label><select id="srvPriority" class="input-dark mt-1"><option>רגיל</option><option>דחוף</option><option>קריטי</option></select></div>
+                                <div><label class="text-[10px] font-bold text-slate-500">תיאור הבעיה</label><textarea id="srvDesc" class="input-dark mt-1 h-24"></textarea></div>
+                                <button onclick="createNewTicket()" class="w-full bg-blue-600 py-3 rounded-xl font-bold hover:bg-blue-500 transition-all">פתח קריאה</button>
+                            </div>
+                        </div>
+                        <!-- Ticket List -->
+                        <div class="lg:col-span-2 space-y-4">
+                            <div class="flex justify-between items-center px-2">
+                                <h4 class="text-lg font-bold">היסטוריית שירות</h4>
+                                <span id="serviceCount" class="text-xs bg-white/5 px-3 py-1 rounded-full text-slate-400">0 קריאות</span>
+                            </div>
+                            <div id="serviceList" class="space-y-3"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Files Tab -->
+                <div id="tab-files" class="tab-content">
+                    <div class="flex justify-between items-center mb-6">
+                        <h4 class="text-lg font-bold">קבצים ומסמכים</h4>
+                        <label class="bg-slate-700 hover:bg-slate-600 px-6 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all">
+                            <span>+ העלה קובץ חדש</span>
+                            <input type="file" id="fileInput" class="hidden" onchange="handleFileUpload(event)">
+                        </label>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4" id="filesGrid"></div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -170,18 +212,19 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = JSON.parse('{"apiKey":"AIzaSyDV-ncOuncy-7HZZJnCMe4uis9ZV2QczYw","authDomain":"dreamcrm-2d69d.firebaseapp.com","projectId":"dreamcrm-2d69d","storageBucket":"dreamcrm-2d69d.firebasestorage.app","appId":"1:124987219085:web:87edf1c9024a82950ad6c4"}');
-
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'dream-crm-ultimate';
 
+        let user = null;
         let allCustomers = [];
+        let currentCustomerId = null;
 
-        // Auth
+        // Auth & Init
         const initAuth = async () => {
             if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                 await signInWithCustomToken(auth, __initial_auth_token);
@@ -191,113 +234,251 @@
         };
         initAuth();
 
-        onAuthStateChanged(auth, (user) => {
-            if (!user) return;
-            document.getElementById('loader').classList.add('hidden');
-            
-            // Listen to customers
-            const ref = collection(db, 'artifacts', appId, 'public', 'data', 'customers');
-            onSnapshot(ref, (snap) => {
-                allCustomers = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                filterCustomers();
-            });
+        onAuthStateChanged(auth, (u) => {
+            user = u;
+            if (u) {
+                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), (snap) => {
+                    allCustomers = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                    filterCustomers();
+                });
+            }
         });
 
-        window.filterCustomers = () => {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const typeFilter = document.getElementById('filterType').value;
+        // Tab Switch Logic
+        window.switchTab = (tabId) => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             
-            const filtered = allCustomers.filter(c => {
-                const matchesSearch = (c.name || '').toLowerCase().includes(searchTerm) || 
-                                    (c.phone || '').includes(searchTerm) ||
-                                    (c.email || '').toLowerCase().includes(searchTerm);
-                const matchesType = typeFilter === 'all' || c.type === typeFilter;
-                return matchesSearch && matchesType;
-            });
-
-            renderCustomers(filtered);
+            const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.onclick.toString().includes(tabId));
+            if (btn) btn.classList.add('active');
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            
+            if (currentCustomerId) {
+                if (tabId === 'finance') loadFinanceData();
+                if (tabId === 'service') loadServiceTickets();
+                if (tabId === 'files') loadFiles();
+            }
         };
 
-        function renderCustomers(data) {
+        // Search & Filter
+        window.filterCustomers = () => {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allCustomers.filter(c => 
+                (c.name || '').toLowerCase().includes(search) || 
+                (c.phone || '').includes(search)
+            );
+            renderTable(filtered);
+        };
+
+        function renderTable(data) {
             const body = document.getElementById('customersTableBody');
             document.getElementById('customerCount').innerText = data.length;
-            body.innerHTML = '';
-
-            data.forEach(c => {
-                body.innerHTML += `
-                    <tr class="border-b border-white/5 customer-row transition-all">
-                        <td class="p-6 font-bold text-white">${c.name}</td>
-                        <td class="p-6 text-slate-400 text-sm">${c.type || 'פרטי'}</td>
-                        <td class="p-6">
-                            <div class="text-white text-xs">${c.email || '-'}</div>
-                            <div class="text-slate-500 text-[10px] mt-1">${c.phone || '-'}</div>
-                        </td>
-                        <td class="p-6">
-                            <span class="px-3 py-1 rounded-full text-[10px] font-bold ${c.status === 'פעיל' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}">
-                                ${c.status || 'פעיל'}
-                            </span>
-                        </td>
-                        <td class="p-6">
-                            <button onclick="openCustomerModal('${c.id}')" class="text-blue-400 hover:text-blue-300 font-bold text-xs">ערוך ✎</button>
-                        </td>
-                    </tr>
-                `;
-            });
+            body.innerHTML = data.map(c => `
+                <tr class="border-b border-white/5 hover:bg-white/5 transition-all">
+                    <td class="p-6">
+                        <div class="font-bold">${c.name}</div>
+                        <div class="text-[10px] text-slate-500 uppercase">${c.type || 'פרטי'}</div>
+                    </td>
+                    <td class="p-6">
+                        <div class="text-xs">${c.email || '-'}</div>
+                        <div class="text-slate-500 text-[10px]">${c.phone || '-'}</div>
+                    </td>
+                    <td class="p-6 font-bold ${ (c.balance || 0) < 0 ? 'text-red-400' : 'text-green-400'}">₪${(c.balance || 0).toLocaleString()}</td>
+                    <td class="p-6">
+                        <span class="px-3 py-1 rounded-full text-[10px] font-bold ${c.status === 'פעיל' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}">
+                            ${c.status || 'פעיל'}
+                        </span>
+                    </td>
+                    <td class="p-6">
+                        <button onclick="openCustomerModal('${c.id}')" class="text-blue-500 hover:text-white font-bold text-xs bg-blue-500/10 px-4 py-2 rounded-xl transition-all">צפה בכרטיס ←</button>
+                    </td>
+                </tr>
+            `).join('');
         }
 
+        // Modal Controls
         window.openCustomerModal = (id = null) => {
-            document.getElementById('customerForm').reset();
-            document.getElementById('customerId').value = id || '';
-            document.getElementById('modalTitle').innerText = id ? "עריכת לקוח" : "הוספת לקוח חדש";
-            
+            currentCustomerId = id;
             if (id) {
                 const c = allCustomers.find(x => x.id === id);
-                if (c) {
-                    document.getElementById('custName').value = c.name || '';
-                    document.getElementById('custTaxId').value = c.taxId || '';
-                    document.getElementById('custEmail').value = c.email || '';
-                    document.getElementById('custPhone').value = c.phone || '';
-                    document.getElementById('custType').value = c.type || 'פרטי';
-                    document.getElementById('custAddress').value = c.address || '';
-                    document.getElementById('custStatus').value = c.status || 'פעיל';
-                    document.getElementById('custNotes').value = c.notes || '';
-                }
+                document.getElementById('modalTitle').innerText = c.name;
+                document.getElementById('modalSubtitle').innerText = `Customer ID: ${c.id}`;
+                document.getElementById('modalAvatar').innerText = c.name.charAt(0);
+                document.getElementById('custName').value = c.name;
+                document.getElementById('custEmail').value = c.email || '';
+                document.getElementById('custPhone').value = c.phone || '';
+                document.getElementById('custType').value = c.type || 'פרטי';
+                document.getElementById('custStatus').value = c.status || 'פעיל';
+                document.getElementById('custAddress').value = c.address || '';
+                document.getElementById('financeBalance').innerText = `₪${(c.balance || 0).toLocaleString()}`;
+            } else {
+                document.getElementById('modalTitle').innerText = "לקוח חדש";
+                document.getElementById('modalSubtitle').innerText = "הזנת פרטי לקוח חדש במערכת";
+                document.getElementById('modalAvatar').innerText = "?";
+                ['custName', 'custEmail', 'custPhone', 'custAddress'].forEach(id => document.getElementById(id).value = '');
             }
+            switchTab('general');
             document.getElementById('customerModal').classList.remove('hidden');
         };
 
         window.closeModal = () => document.getElementById('customerModal').classList.add('hidden');
 
+        // FINANCE FUNCTIONS
+        async function loadFinanceData() {
+            if (!currentCustomerId) return;
+            const ref = collection(db, 'artifacts', appId, 'public', 'data', 'finance');
+            const snap = await getDocs(ref);
+            const list = snap.docs.map(d => d.data()).filter(f => f.customerId === currentCustomerId);
+            
+            document.getElementById('financeTable').innerHTML = list.sort((a,b) => (b.date?.seconds || 0) - (a.date?.seconds || 0)).map(f => `
+                <tr class="border-b border-white/5">
+                    <td class="p-4 text-slate-500 text-[10px]">${f.date ? new Date(f.date.seconds * 1000).toLocaleDateString('he-IL') : 'היום'}</td>
+                    <td class="p-4 font-bold text-blue-400">${f.invoice || '-'}</td>
+                    <td class="p-4 text-slate-300">${f.desc}</td>
+                    <td class="p-4 ${f.amount < 0 ? 'text-red-400' : 'text-green-400'} font-bold">₪${f.amount.toLocaleString()}</td>
+                </tr>
+            `).join('') || '<tr><td colspan="4" class="p-10 text-center text-slate-500 italic">אין היסטוריה כספית</td></tr>';
+        }
+
+        window.addFinanceRecord = async () => {
+            const amount = parseFloat(document.getElementById('financeAmount').value);
+            const invoice = document.getElementById('financeInvoice').value;
+            const desc = document.getElementById('financeDesc').value;
+            
+            if (!amount || !desc || !currentCustomerId) return alert("מלא את כל השדות (סכום ותיאור)");
+
+            document.getElementById('loader').classList.remove('hidden');
+            try {
+                // Add record
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'finance'), {
+                    customerId: currentCustomerId,
+                    amount,
+                    invoice,
+                    desc,
+                    date: serverTimestamp()
+                });
+                
+                // Update customer balance
+                const c = allCustomers.find(x => x.id === currentCustomerId);
+                const newBalance = (c.balance || 0) + amount;
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', currentCustomerId), {
+                    balance: newBalance
+                });
+
+                document.getElementById('financeAmount').value = '';
+                document.getElementById('financeInvoice').value = '';
+                document.getElementById('financeDesc').value = '';
+                document.getElementById('financeBalance').innerText = `₪${newBalance.toLocaleString()}`;
+                loadFinanceData();
+            } catch (e) { console.error(e); }
+            document.getElementById('loader').classList.add('hidden');
+        };
+
+        // SERVICE FUNCTIONS
+        async function loadServiceTickets() {
+            if (!currentCustomerId) return;
+            const snap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'service_tickets'));
+            const list = snap.docs.map(d => d.data()).filter(t => t.customerId === currentCustomerId);
+            
+            document.getElementById('serviceCount').innerText = `${list.length} קריאות`;
+            document.getElementById('serviceList').innerHTML = list.map(t => `
+                <div class="glass p-4 rounded-xl flex justify-between items-center border-r-4 ${t.status === 'פתוח' ? 'border-red-500' : 'border-green-500'}">
+                    <div>
+                        <p class="font-bold text-slate-200">${t.subject}</p>
+                        <p class="text-[10px] text-slate-500">${t.priority} • הופק ב: ${t.date || 'לא ידוע'}</p>
+                    </div>
+                    <span class="px-2 py-1 rounded text-[10px] font-bold ${t.status === 'פתוח' ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}">${t.status}</span>
+                </div>
+            `).join('') || '<p class="text-center text-slate-600 py-10 italic">טרם נפתחו קריאות ללקוח זה</p>';
+        }
+
+        window.createNewTicket = async () => {
+            const subject = document.getElementById('srvSubject').value;
+            const priority = document.getElementById('srvPriority').value;
+            const desc = document.getElementById('srvDesc').value;
+
+            if (!subject || !currentCustomerId) return alert("יש להזין נושא לקריאה");
+
+            document.getElementById('loader').classList.remove('hidden');
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'service_tickets'), {
+                    customerId: currentCustomerId,
+                    subject,
+                    priority,
+                    desc,
+                    status: 'פתוח',
+                    date: new Date().toLocaleDateString('he-IL'),
+                    createdAt: serverTimestamp()
+                });
+                document.getElementById('srvSubject').value = '';
+                document.getElementById('srvDesc').value = '';
+                loadServiceTickets();
+            } catch (e) { console.error(e); }
+            document.getElementById('loader').classList.add('hidden');
+        };
+
+        // FILE FUNCTIONS
+        async function loadFiles() {
+            if (!currentCustomerId) return;
+            const snap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'files'));
+            const list = snap.docs.map(d => d.data()).filter(f => f.customerId === currentCustomerId);
+            
+            document.getElementById('filesGrid').innerHTML = list.map(f => `
+                <div class="glass p-3 rounded-xl flex flex-col items-center text-center group relative border border-white/5">
+                    <div class="w-10 h-10 bg-white/5 rounded-lg flex items-center justify-center text-xl mb-2">📄</div>
+                    <p class="text-[9px] font-bold truncate w-full text-slate-400">${f.name}</p>
+                    <div class="absolute inset-0 bg-blue-600/80 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-pointer">
+                        <span class="text-[10px] font-bold">פתח קובץ</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.handleFileUpload = async (e) => {
+            const file = e.target.files[0];
+            if (!file || !currentCustomerId) return;
+            
+            document.getElementById('loader').classList.remove('hidden');
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'files'), {
+                    customerId: currentCustomerId,
+                    name: file.name,
+                    size: file.size,
+                    createdAt: serverTimestamp()
+                });
+                loadFiles();
+            } catch (e) { console.error(e); }
+            document.getElementById('loader').classList.add('hidden');
+        };
+
+        // GLOBAL SAVE
         window.saveCustomer = async () => {
-            const id = document.getElementById('customerId').value;
             const data = {
                 name: document.getElementById('custName').value,
-                taxId: document.getElementById('custTaxId').value,
                 email: document.getElementById('custEmail').value,
                 phone: document.getElementById('custPhone').value,
                 type: document.getElementById('custType').value,
-                address: document.getElementById('custAddress').value,
                 status: document.getElementById('custStatus').value,
-                notes: document.getElementById('custNotes').value,
+                address: document.getElementById('custAddress').value,
                 updatedAt: serverTimestamp()
             };
 
+            if (!data.name) return alert("חובה להזין שם לקוח");
+
+            document.getElementById('loader').classList.remove('hidden');
             try {
-                if (id) {
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', id), data);
+                if (currentCustomerId) {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', currentCustomerId), data);
                 } else {
+                    data.balance = 0;
                     data.createdAt = serverTimestamp();
                     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), data);
                 }
                 closeModal();
-            } catch (err) {
-                console.error("Save error", err);
-            }
+            } catch (e) { console.error(e); }
+            document.getElementById('loader').classList.add('hidden');
         };
 
-        window.logout = () => {
-            // Log out logic
-        };
     </script>
 </body>
 </html>
