@@ -3,206 +3,217 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DreamCRM - דאשבורד ניהול</title>
+    <title>DreamCRM </title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Assistant', sans-serif; background: #0f172a; color: white; overflow-x: hidden; }
-        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        body { font-family: 'Assistant', sans-serif; background: #020617; color: white; overflow-x: hidden; }
+        .glass { background: rgba(30, 41, 59, 0.5); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
         .sidebar-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; color: #94a3b8; transition: all 0.2s; font-weight: 600; }
         .sidebar-item:hover { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
         .sidebar-item.active { background: rgba(59, 130, 246, 0.1); color: #3b82f6; border-right: 4px solid #3b82f6; }
-        .stat-card { transition: all 0.3s ease; }
-        .stat-card:hover { transform: translateY(-5px); border-color: rgba(59, 130, 246, 0.4); }
-        .loading-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); z-index: 100; display: flex; align-items: center; justify-center: center; }
+        .stat-card { transition: transform 0.3s ease; border: 1px solid rgba(255,255,255,0.03); }
+        .stat-card:hover { transform: translateY(-5px); border-color: rgba(59, 130, 246, 0.3); }
+        @keyframes pulse-soft { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .live-indicator { width: 8px; height: 8px; background: #10b981; border-radius: 50%; animation: pulse-soft 2s infinite; }
     </style>
 </head>
 <body class="flex min-h-screen">
 
-    <div id="loader" class="loading-overlay">
-        <div class="text-xl font-bold animate-pulse text-blue-500 italic">טוען נתונים...</div>
-    </div>
-
-    <!-- Sidebar Navigation -->
+    <!-- Sidebar -->
     <aside class="w-72 glass border-l border-white/5 p-8 hidden lg:flex flex-col sticky top-0 h-screen">
-        <div class="mb-10">
+        <div class="mb-10 text-center">
             <h1 class="text-2xl font-black italic tracking-tighter text-blue-500">DreamCRM</h1>
-            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Next-Gen Management</p>
+            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Enterprise OS</p>
         </div>
-        
         <nav class="space-y-2 flex-grow">
             <a href="dashboard.html" class="sidebar-item active"><span>📊</span> דאשבורד</a>
             <a href="customers.html" class="sidebar-item"><span>👥</span> לקוחות</a>
+            <a href="tasks.html" class="sidebar-item"><span>✅</span> משימות</a>
             <a href="service.html" class="sidebar-item"><span>🛠️</span> שירות</a>
             <a href="finance.html" class="sidebar-item"><span>💰</span> כספים</a>
             <a href="leads.html" class="sidebar-item"><span>🎯</span> לידים</a>
             <a href="products.html" class="sidebar-item"><span>📦</span> מוצרים</a>
             <a href="reports.html" class="sidebar-item"><span>📈</span> דוחות</a>
-            <a href="users.html" class="sidebar-item"><span>👤</span> משתמשים</a>
         </nav>
-
-        <div class="mt-auto pt-6 border-t border-white/5">
-            <button onclick="logout()" class="sidebar-item text-red-400 w-full text-right"><span>🚪</span> התנתק</button>
+        <div class="pt-6 border-t border-white/5 text-[10px] text-slate-500 font-bold">
+            DREAM CRM v4.2.0
         </div>
     </aside>
 
-    <!-- Main Content -->
     <main class="flex-grow p-6 lg:p-12">
+        <!-- Top Bar: User Info -->
         <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
             <div>
-                <h2 class="text-3xl font-black italic">ברוכים הבאים, <span id="userNameDisplay" class="text-blue-500">מנהל</span></h2>
-                <p class="text-slate-400 text-sm">סקירה כללית של ביצועי המערכת בזמן אמת</p>
+                <h2 class="text-3xl font-black italic">סקירה <span class="text-blue-500">כללית</span></h2>
+                <p class="text-slate-400 text-sm">ברוך הבא למרכז הבקרה שלך</p>
             </div>
-            <div class="flex gap-3">
-                <button class="glass px-4 py-2 rounded-xl text-sm font-bold hover:bg-white/5">📅 היום</button>
-                <button class="bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded-xl font-bold transition-all shadow-lg shadow-blue-900/20">דוח מהיר</button>
+            
+            <div class="glass px-6 py-3 rounded-2xl flex items-center gap-4">
+                <div class="text-left md:text-right">
+                    <p id="userName" class="text-sm font-bold">טוען משתמש...</p>
+                    <p id="userRole" class="text-[10px] text-blue-400 font-black uppercase">Admin Access</p>
+                </div>
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-white shadow-lg">
+                    <span id="userInitials">??</span>
+                </div>
             </div>
         </header>
 
         <!-- Stats Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-            <div class="glass p-6 rounded-2xl stat-card">
-                <p class="text-slate-400 text-xs font-bold uppercase tracking-widest">לידים חדשים</p>
-                <h3 id="stat-leads" class="text-3xl font-black mt-1">0</h3>
-                <p class="text-green-400 text-xs mt-2 font-bold">↑ 12% מהשבוע שעבר</p>
+            <div class="glass p-8 rounded-[2rem] stat-card">
+                <p class="text-slate-400 text-xs font-bold uppercase mb-2">לידים חדשים</p>
+                <h3 id="statLeads" class="text-4xl font-black tracking-tighter">0</h3>
+                <p class="text-green-400 text-[10px] mt-2 font-bold">+12% מהשבוע שעבר</p>
             </div>
-            <div class="glass p-6 rounded-2xl stat-card border-r-4 border-blue-500">
-                <p class="text-slate-400 text-xs font-bold uppercase tracking-widest">מכירות החודש</p>
-                <h3 id="stat-sales" class="text-3xl font-black mt-1">₪0</h3>
-                <p class="text-slate-400 text-xs mt-2 italic">יעד: ₪150,000</p>
+            <div class="glass p-8 rounded-[2rem] stat-card">
+                <p class="text-slate-400 text-xs font-bold uppercase mb-2">משימות פתוחות</p>
+                <h3 id="statTasks" class="text-4xl font-black tracking-tighter">0</h3>
+                <p class="text-blue-400 text-[10px] mt-2 font-bold">מעקב בזמן אמת</p>
             </div>
-            <div class="glass p-6 rounded-2xl stat-card border-r-4 border-amber-500">
-                <p class="text-slate-400 text-xs font-bold uppercase tracking-widest">קריאות שירות פתוחות</p>
-                <h3 id="stat-tickets" class="text-3xl font-black mt-1">0</h3>
-                <p class="text-amber-400 text-xs mt-2 font-bold">4 דורשות טיפול דחוף</p>
+            <div class="glass p-8 rounded-[2rem] stat-card">
+                <p class="text-slate-400 text-xs font-bold uppercase mb-2">לקוחות פעילים</p>
+                <h3 id="statCustomers" class="text-4xl font-black tracking-tighter">0</h3>
+                <p class="text-purple-400 text-[10px] mt-2 font-bold">בסיס נתונים מאובטח</p>
             </div>
-            <div class="glass p-6 rounded-2xl stat-card border-r-4 border-purple-500">
-                <p class="text-slate-400 text-xs font-bold uppercase tracking-widest">לקוחות פעילים</p>
-                <h3 id="stat-customers" class="text-3xl font-black mt-1">0</h3>
-                <p class="text-slate-400 text-xs mt-2">גידול אורגני יציב</p>
+            <div class="glass p-8 rounded-[2rem] stat-card">
+                <p class="text-slate-400 text-xs font-bold uppercase mb-2">הכנסות החודש</p>
+                <h3 id="statFinance" class="text-4xl font-black tracking-tighter">₪0</h3>
+                <p class="text-yellow-400 text-[10px] mt-2 font-bold">יעד: ₪100,000</p>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
-            <!-- Recent Activity Table -->
-            <div class="xl:col-span-2 glass rounded-[2rem] overflow-hidden flex flex-col">
-                <div class="p-8 border-b border-white/5 flex justify-between items-center bg-white/5">
-                    <h3 class="text-xl font-black italic">פעילות <span class="text-blue-500">אחרונה</span></h3>
-                    <button class="text-sm text-blue-400 hover:underline">צפה בהכל</button>
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-10">
+            <!-- Recent Activity: Leads -->
+            <div class="glass p-8 rounded-[2.5rem]">
+                <div class="flex justify-between items-center mb-6">
+                    <h4 class="text-xl font-black italic">לידים <span class="text-blue-500">אחרונים</span></h4>
+                    <a href="leads.html" class="text-xs text-slate-500 hover:text-white transition-colors">צפה בהכל ←</a>
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-right">
-                        <thead>
-                            <tr class="text-slate-500 text-[10px] font-bold uppercase tracking-widest border-b border-white/5">
-                                <th class="p-6">לקוח / נושא</th>
-                                <th class="p-6">סוג</th>
-                                <th class="p-6">סטטוס</th>
-                                <th class="p-6">תאריך</th>
-                            </tr>
-                        </thead>
-                        <tbody id="recentActivityBody" class="text-sm">
-                            <!-- Data rows will appear here -->
-                        </tbody>
-                    </table>
+                <div id="recentLeads" class="space-y-4">
+                    <!-- Dynamic Leads -->
                 </div>
             </div>
 
-            <!-- Quick Access / Notifications -->
-            <div class="glass rounded-[2rem] p-8">
-                <h3 class="text-xl font-black italic mb-6">משימות <span class="text-amber-500">דחופות</span></h3>
-                <div id="urgentTasksList" class="space-y-4">
-                    <!-- Tasks will appear here -->
-                    <div class="p-4 bg-white/5 rounded-2xl border border-white/5 hover:border-blue-500/30 transition-all cursor-pointer">
-                        <p class="font-bold text-sm">חזרה לליד: יובל לוי</p>
-                        <p class="text-[10px] text-slate-500 mt-1 italic">מקור: פייסבוק | לפני 20 דק'</p>
-                    </div>
+            <!-- Urgent Tasks -->
+            <div class="glass p-8 rounded-[2.5rem]">
+                <div class="flex justify-between items-center mb-6">
+                    <h4 class="text-xl font-black italic">משימות <span class="text-blue-500">דחופות</span></h4>
+                    <a href="tasks.html" class="text-xs text-slate-500 hover:text-white transition-colors">ללוח המשימות ←</a>
+                </div>
+                <div id="urgentTasks" class="space-y-4">
+                    <!-- Dynamic Tasks -->
                 </div>
             </div>
         </div>
+
+        <!-- Footer: Time & Date -->
+        <footer class="flex justify-between items-center p-6 glass rounded-2xl border-white/5">
+            <div class="flex items-center gap-3">
+                <div class="live-indicator"></div>
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">System Online</span>
+            </div>
+            <div class="text-right">
+                <p id="currentTime" class="text-xl font-black tracking-tighter">00:00:00</p>
+                <p id="currentDate" class="text-[10px] text-blue-400 font-bold uppercase">טוען תאריך...</p>
+            </div>
+        </footer>
     </main>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, query, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = JSON.parse('{"apiKey":"AIzaSyDV-ncOuncy-7HZZJnCMe4uis9ZV2QczYw","authDomain":"dreamcrm-2d69d.firebaseapp.com","projectId":"dreamcrm-2d69d","storageBucket":"dreamcrm-2d69d.firebasestorage.app","appId":"1:124987219085:web:87edf1c9024a82950ad6c4"}');
-
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'dream-crm-ultimate';
+        const appId = 'dream-crm-ultimate';
 
-        // Auth Logic
-        const initAuth = async () => {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
+        // Timer & Date Sync
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('currentTime').innerText = now.toLocaleTimeString('he-IL');
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('currentDate').innerText = now.toLocaleDateString('he-IL', options);
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                setupRealtimeStats();
+                // Simulating user info from auth (In real app, fetch from /users collection)
+                document.getElementById('userName').innerText = "ישראל ישראלי";
+                document.getElementById('userInitials').innerText = "יי";
             } else {
-                await signInAnonymously(auth);
+                signInAnonymously(auth);
             }
-        };
-        initAuth();
-
-        onAuthStateChanged(auth, (user) => {
-            if (!user) {
-                // In a real app, redirect to login
-                console.log("Not logged in");
-                return;
-            }
-            document.getElementById('loader').classList.add('hidden');
-            loadDashboardData();
         });
 
-        function loadDashboardData() {
-            // Stats Listeners
-            const collections = ['leads', 'tickets', 'customers', 'users'];
-            collections.forEach(col => {
-                const ref = collection(db, 'artifacts', appId, 'public', 'data', col);
-                onSnapshot(ref, (snap) => {
-                    const count = snap.size;
-                    if (col === 'leads') document.getElementById('stat-leads').innerText = count;
-                    if (col === 'tickets') document.getElementById('stat-tickets').innerText = count;
-                    if (col === 'customers') document.getElementById('stat-customers').innerText = count;
-                }, (err) => console.error(`Error loading ${col}`, err));
+        function setupRealtimeStats() {
+            // Count Leads
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'leads'), (snap) => {
+                document.getElementById('statLeads').innerText = snap.size;
+                const recent = snap.docs.slice(0, 4).map(d => d.data());
+                renderRecentLeads(recent);
             });
 
-            // Activity Listener (Rule 2: Simple query, filter in JS)
-            const activityRef = collection(db, 'artifacts', appId, 'public', 'data', 'tickets');
-            onSnapshot(activityRef, (snap) => {
-                const activities = snap.docs.map(d => ({id: d.id, ...d.data()}))
-                                       .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0))
-                                       .slice(0, 5);
-                renderActivity(activities);
+            // Count Tasks
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'tasks'), (snap) => {
+                const tasks = snap.docs.map(d => d.data());
+                document.getElementById('statTasks').innerText = tasks.filter(t => t.status !== 'done').length;
+                const urgent = tasks.filter(t => t.priority === 'high' || t.priority === 'urgent').slice(0, 4);
+                renderUrgentTasks(urgent);
+            });
+
+            // Count Customers
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), (snap) => {
+                document.getElementById('statCustomers').innerText = snap.size;
             });
         }
 
-        function renderActivity(data) {
-            const body = document.getElementById('recentActivityBody');
-            body.innerHTML = '';
-            data.forEach(item => {
-                const date = item.createdAt?.toDate ? item.createdAt.toDate().toLocaleDateString('he-IL') : 'היום';
-                body.innerHTML += `
-                    <tr class="border-b border-white/5 hover:bg-white/5 transition-all cursor-pointer">
-                        <td class="p-6">
-                            <div class="font-bold">${item.subject || item.customerName || 'ללא שם'}</div>
-                        </td>
-                        <td class="p-6 text-slate-400">קריאת שירות</td>
-                        <td class="p-6">
-                            <span class="px-3 py-1 rounded-full text-[10px] font-bold ${item.status === 'סגור' ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'}">
-                                ${item.status || 'פתוח'}
-                            </span>
-                        </td>
-                        <td class="p-6 text-slate-500">${date}</td>
-                    </tr>
-                `;
-            });
+        function renderRecentLeads(leads) {
+            const container = document.getElementById('recentLeads');
+            if (leads.length === 0) {
+                container.innerHTML = `<p class="text-slate-500 text-sm">אין לידים חדשים כרגע</p>`;
+                return;
+            }
+            container.innerHTML = leads.map(l => `
+                <div class="flex items-center justify-between p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-colors">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 text-xs">👤</div>
+                        <div>
+                            <p class="text-sm font-bold">${l.name}</p>
+                            <p class="text-[10px] text-slate-500">${l.phone || 'ללא טלפון'}</p>
+                        </div>
+                    </div>
+                    <span class="text-[10px] bg-blue-500/10 text-blue-400 px-2 py-1 rounded-lg uppercase font-bold">${l.source || 'אורגני'}</span>
+                </div>
+            `).join('');
         }
 
-        window.logout = () => {
-            signOut(auth).then(() => {
-                window.location.href = 'index.html';
-            });
-        };
+        function renderUrgentTasks(tasks) {
+            const container = document.getElementById('urgentTasks');
+            if (tasks.length === 0) {
+                container.innerHTML = `<p class="text-slate-500 text-sm">אין משימות דחופות</p>`;
+                return;
+            }
+            container.innerHTML = tasks.map(t => `
+                <div class="flex items-center justify-between p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-colors">
+                    <div class="flex items-center gap-3">
+                        <div class="w-2 h-2 rounded-full bg-red-500"></div>
+                        <div>
+                            <p class="text-sm font-bold">${t.title}</p>
+                            <p class="text-[10px] text-slate-500">${t.assignee || 'לא הוקצה'}</p>
+                        </div>
+                    </div>
+                    <button class="text-xs text-blue-500 font-bold">טפל ></button>
+                </div>
+            `).join('');
+        }
     </script>
 </body>
 </html>
